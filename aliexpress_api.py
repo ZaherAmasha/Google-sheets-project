@@ -1,8 +1,30 @@
 import requests
 import os
 from bs4 import BeautifulSoup
+import gspread
+from google.oauth2.service_account import Credentials
 
 # search_keyword = "black shoes"
+
+
+def _update_spreadsheet_with_fetched_products(titles, image_names):
+    scopes = ["https://www.googleapis.com/auth/spreadsheets"]
+    creds = Credentials.from_service_account_file("credentials.json", scopes=scopes)
+    client = gspread.authorize(creds)
+
+    # get this from the url of the google sheet. It's between the /d/ and the /edit
+    sheet_id = "1gVRn9ofufRWGHQjLOuVkPMC-2bjvGDXEObnbhfiedkc"
+    workbook = client.open_by_key(sheet_id)
+    sheet = workbook.worksheet("Sheet2")
+
+    values = [titles, image_names]
+    transposed_values = list(zip(*values))
+    sheet.update(range_name=f"A2:D{len(transposed_values)+1}", values=transposed_values)
+
+
+# _update_spreadsheet_with_fetched_products(
+#     ["hi", "this", "a", "test"], ["hi", "this", "another", "test"]
+# )
 
 
 def fetch_aliexpress_product_recommendations(search_keyword):
@@ -47,8 +69,10 @@ def fetch_aliexpress_product_recommendations(search_keyword):
         if img_path.startswith("//"):
             img_path = "https:" + img_path
             print(f"Image: {img_path}")
+        _update_spreadsheet_with_fetched_products(titles=titles, image_names=image_urls)
 
-        response = requests.get(img_path, stream=True)
+        return True
+        # response = requests.get(img_path, stream=True)
 
         if response.status_code == 200:
             os.makedirs("downloaded_images", exist_ok=True)
@@ -61,6 +85,7 @@ def fetch_aliexpress_product_recommendations(search_keyword):
             #         f.write(chunk)
 
             print(f"Image '{image_name}' downloaded successfully.")
+
             return True
         else:
             print("Failed to download the image. Status code:", response.status_code)
