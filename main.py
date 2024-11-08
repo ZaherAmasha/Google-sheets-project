@@ -1,12 +1,22 @@
 from fastapi import FastAPI
 import uvicorn
 
+from aliexpress_api import fetch_aliexpress_product_recommendations
+
 app = FastAPI()
 
 
-@app.post("/")
+@app.get("/health")
 def read_root():
     return {"Hello": "World"}
+
+
+@app.post("/trigger_product_fetch")
+def update_recommended_products():
+    if fetch_aliexpress_product_recommendations():
+        print("Fetching products from AliExpress went well")
+    else:
+        print("Something went bad when fetching products")
 
 
 print("Launched the server")
