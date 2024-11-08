@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 
 from aliexpress_api import fetch_aliexpress_product_recommendations
+from models.fastapi_endpoints import SheetUpdate
 
 load_dotenv()
 
@@ -13,17 +14,23 @@ SHARED_SECRET = os.getenv("SHARED_SECRET")
 
 
 @app.get("/health")
-def read_root():
+async def read_root():
     return {"Hello": "World"}
 
 
 @app.post("/trigger_product_fetch")
-def update_recommended_products(authorization: str = Header(None)):
+async def update_recommended_products(
+    update: SheetUpdate, authorization: str = Header(None)
+):
     # Validate the shared secret
     if authorization != f"Bearer {SHARED_SECRET}":
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-    if fetch_aliexpress_product_recommendations("black shoes"):
+    keyword = update.keyword
+    cell_range = update.range
+    print("keyword and cell_range: ", keyword, " ", cell_range)
+
+    if fetch_aliexpress_product_recommendations(keyword):
         print("Fetching products from AliExpress went well")
         return "Fetching products from AliExpress went well"
     else:

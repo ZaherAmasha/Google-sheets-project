@@ -3,6 +3,7 @@ import os
 from bs4 import BeautifulSoup
 import gspread
 from google.oauth2.service_account import Credentials
+import re
 
 # search_keyword = "black shoes"
 
@@ -19,6 +20,7 @@ def _update_spreadsheet_with_fetched_products(titles, image_names):
 
     values = [titles, image_names]
     transposed_values = list(zip(*values))
+    print("Transposed values: ", transposed_values)
     sheet.update(range_name=f"A2:D{len(transposed_values)+1}", values=transposed_values)
 
 
@@ -52,6 +54,9 @@ def fetch_aliexpress_product_recommendations(search_keyword):
     }
     response = requests.request("GET", url, headers=headers)
 
+    with open("white_shoes_response_text.txt", "w") as output:
+        output.write(response.text)
+
     soup = BeautifulSoup(response.text, "html.parser")
 
     # fetching the titles
@@ -60,34 +65,45 @@ def fetch_aliexpress_product_recommendations(search_keyword):
     for title in titles:
         print("Title:", title.get_text(strip=True))
 
+    # fetching the image urls
     image_urls = soup.find_all("img", class_="images--item--3XZa6xf")
     print(f"found {len(image_urls)} images")
 
-    img_count = 0
+    # img_count = 0
     for img_path in image_urls:
         img_path = img_path.get("src")
         if img_path.startswith("//"):
             img_path = "https:" + img_path
             print(f"Image: {img_path}")
-        _update_spreadsheet_with_fetched_products(titles=titles, image_names=image_urls)
 
-        return True
-        # response = requests.get(img_path, stream=True)
+    # fetching the urls for the individual products
+    product_urls = soup.find_all(
+        "a",
+        class_=re.compile(
+            r"multi--container--1UZxxHY cards--card--3PJxwBm (cards--list--2rmDt5R )?search-card-item"
+        ),
+        # "multi--container--1UZxxHY cards--card--3PJxwBm cards--list--2rmDt5R search-card-item",
+    )
+    # "multi--container--1UZxxHY cards--card--3PJxwBm search-card-item"
+    # "multi--container--1UZxxHY cards--card--3PJxwBm search-card-item"
+    # print("Type of product_urls: ", type(product_urls))
+    print(f"found {len(product_urls)} product urls")
+    titles = [title.get_text(strip=True) for title in titles]
+    product_urls = [
+        ("https:" + product_url.get("href").strip()) for product_url in product_urls
+    ]
+    # for product_url in product_urls:
+    #     print("Product url: ", product_url)
 
-        if response.status_code == 200:
-            os.makedirs("downloaded_images", exist_ok=True)
-            img_count += 1
-            image_name = f"{img_count}" + img_path.split("/")[-1]
-            print("Image found: {image_name}")
-            # # Save the image content to a file for sanity and maybe use these later to be displayed in the google sheet
-            # with open(os.path.join("downloaded_images", image_name), "wb") as f:
-            #     for chunk in response.iter_content(1024):
-            #         f.write(chunk)
+    # print("Products list: ", list(product_urls))
+    _update_spreadsheet_with_fetched_products(
+        titles=list(titles), image_names=list(product_urls)
+    )
 
-            print(f"Image '{image_name}' downloaded successfully.")
+    return True
 
-            return True
-        else:
-            print("Failed to download the image. Status code:", response.status_code)
-        print(f"Image count saved: {img_count}")
-        return False
+
+# examples:
+# fetch_aliexpress_product_recommendations("black shoes")
+# fetch_aliexpress_product_recommendations("white shoes")
+# fetch_aliexpress_product_recommendations("zzzzzzzzzzzzzzzzzzzzzz")
