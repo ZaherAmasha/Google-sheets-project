@@ -20,7 +20,6 @@ def read_root():
 @app.post("/trigger_product_fetch")
 def update_recommended_products(authorization: str = Header(None)):
     # Validate the shared secret
-    print(authorization)
     if authorization != f"Bearer {SHARED_SECRET}":
         raise HTTPException(status_code=401, detail="Unauthorized")
 
