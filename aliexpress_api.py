@@ -8,7 +8,7 @@ import re
 # search_keyword = "black shoes"
 
 
-def _update_spreadsheet_with_fetched_products(titles, image_names):
+def _update_spreadsheet_with_fetched_products(titles, image_names, prices):
     scopes = ["https://www.googleapis.com/auth/spreadsheets"]
     creds = Credentials.from_service_account_file("credentials.json", scopes=scopes)
     client = gspread.authorize(creds)
@@ -18,11 +18,16 @@ def _update_spreadsheet_with_fetched_products(titles, image_names):
     workbook = client.open_by_key(sheet_id)
     sheet = workbook.worksheet("Sheet2")
 
-    values = [titles, image_names]
+    values = [titles, image_names, prices]
     transposed_values = list(zip(*values))
     print("Transposed values: ", transposed_values)
-    sheet.update(range_name=f"A2:D{len(transposed_values)+1}", values=transposed_values)
+    sheet.update(
+        range_name=f"A2:C{len(transposed_values)+1}",
+        values=transposed_values,
+    )
 
+
+# sheet.format("A1:C1", format={"textFormat": {"bold": True}})
 
 # _update_spreadsheet_with_fetched_products(
 #     ["hi", "this", "a", "test"], ["hi", "this", "another", "test"]
@@ -54,8 +59,8 @@ def fetch_aliexpress_product_recommendations(search_keyword):
     }
     response = requests.request("GET", url, headers=headers)
 
-    with open("white_shoes_response_text.txt", "w") as output:
-        output.write(response.text)
+    # with open("white_shoes_response_text.txt", "w") as output:
+    #     output.write(response.text)
 
     soup = BeautifulSoup(response.text, "html.parser")
 
@@ -95,9 +100,15 @@ def fetch_aliexpress_product_recommendations(search_keyword):
     # for product_url in product_urls:
     #     print("Product url: ", product_url)
 
+    prices = soup.find_all("div", class_="multi--price-sale--U-S0jtj")
+    print(f"Found {len(prices)} prices")
+    for price in prices:
+        print(f"These are the prices: {price.get_text(strip=True)}")
+    prices = [price.get_text(strip=True) for price in prices]
+
     # print("Products list: ", list(product_urls))
     _update_spreadsheet_with_fetched_products(
-        titles=list(titles), image_names=list(product_urls)
+        titles=list(titles), image_names=list(product_urls), prices=list(prices)
     )
 
     return True
@@ -105,5 +116,5 @@ def fetch_aliexpress_product_recommendations(search_keyword):
 
 # examples:
 # fetch_aliexpress_product_recommendations("black shoes")
-# fetch_aliexpress_product_recommendations("white shoes")
+fetch_aliexpress_product_recommendations("white shoes")
 # fetch_aliexpress_product_recommendations("zzzzzzzzzzzzzzzzzzzzzz")
