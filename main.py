@@ -15,8 +15,10 @@ def read_root():
 def update_recommended_products():
     if fetch_aliexpress_product_recommendations("black shoes"):
         print("Fetching products from AliExpress went well")
+        return "Fetching products from AliExpress went well"
     else:
         print("Something went bad when fetching products")
+        return "Something wend bad when fetching products"
 
 
 print("Launched the server")
