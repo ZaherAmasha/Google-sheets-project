@@ -1,4 +1,4 @@
 beautifulsoup4==4.12.3
 fastapi==0.115.4
 uvicorn[standard]==0.32.0
-requests
+requests==2.32.3
