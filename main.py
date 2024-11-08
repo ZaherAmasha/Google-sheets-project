@@ -13,7 +13,7 @@ def read_root():
 
 @app.post("/trigger_product_fetch")
 def update_recommended_products():
-    if fetch_aliexpress_product_recommendations():
+    if fetch_aliexpress_product_recommendations("black shoes"):
         print("Fetching products from AliExpress went well")
     else:
         print("Something went bad when fetching products")
