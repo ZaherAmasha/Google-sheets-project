@@ -128,5 +128,5 @@ def fetch_aliexpress_product_recommendations(search_keyword, product_order_id):
 
 # examples:
 # fetch_aliexpress_product_recommendations("black shoes")
-fetch_aliexpress_product_recommendations("white shoes")
+# fetch_aliexpress_product_recommendations("white shoes")
 # fetch_aliexpress_product_recommendations("zzzzzzzzzzzzzzzzzzzzzz")
