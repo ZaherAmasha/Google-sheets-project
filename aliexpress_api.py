@@ -8,7 +8,9 @@ import re
 # search_keyword = "black shoes"
 
 
-def _update_spreadsheet_with_fetched_products(titles, image_names, prices):
+def _update_spreadsheet_with_fetched_products(
+    titles, image_names, prices, product_order_id
+):
     scopes = ["https://www.googleapis.com/auth/spreadsheets"]
     creds = Credentials.from_service_account_file("credentials.json", scopes=scopes)
     client = gspread.authorize(creds)
@@ -21,8 +23,15 @@ def _update_spreadsheet_with_fetched_products(titles, image_names, prices):
     values = [titles, image_names, prices]
     transposed_values = list(zip(*values))
     print("Transposed values: ", transposed_values)
+    # to add an empty row betwee products for different keywords
+    if product_order_id > 1:
+        add_line_between = 1
+    else:
+        add_line_between = 0
+
     sheet.update(
-        range_name=f"A2:C{len(transposed_values)+1}",
+        # range_name=f"A2:C{len(transposed_values)+1}",
+        range_name=f"A{2+9*(product_order_id-1)+add_line_between}:C{len(transposed_values)+1 +9*(product_order_id-1)+add_line_between}",
         values=transposed_values,
     )
 
@@ -34,7 +43,7 @@ def _update_spreadsheet_with_fetched_products(titles, image_names, prices):
 # )
 
 
-def fetch_aliexpress_product_recommendations(search_keyword):
+def fetch_aliexpress_product_recommendations(search_keyword, product_order_id):
 
     url = f"https://www.aliexpress.com/w/wholesale-{search_keyword}.html?spm=a2g0o.productlist.search.0"
 
@@ -108,7 +117,10 @@ def fetch_aliexpress_product_recommendations(search_keyword):
 
     # print("Products list: ", list(product_urls))
     _update_spreadsheet_with_fetched_products(
-        titles=list(titles), image_names=list(product_urls), prices=list(prices)
+        titles=list(titles),
+        image_names=list(product_urls),
+        prices=list(prices),
+        product_order_id=product_order_id,
     )
 
     return True
