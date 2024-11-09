@@ -25,13 +25,21 @@ def _update_spreadsheet_with_fetched_products(
     print("Transposed values: ", transposed_values)
     # to add an empty row betwee products for different keywords
     if product_order_id > 1:
-        add_line_between = 3
-    else:
         add_line_between = 1
+    else:
+        add_line_between = 0
+
+    # getting the number of rows in sheet2 so far
+    current_number_of_rows = len(sheet.col_values(1))
+    num_of_products_to_update = len(titles)
+    # print("num of products: ", num_of_products_to_update)
+    # print("num of products: ", len(transposed_values))
+    # print("row count: ", len(sheet.col_values(1)))
 
     sheet.update(
         # range_name=f"A2:C{len(transposed_values)+1}",
-        range_name=f"A{2+9*(product_order_id-1)+add_line_between}:C{len(transposed_values)+1 +9*(product_order_id-1)+add_line_between}",
+        # range_name=f"A{2+9*(product_order_id-1)+add_line_between}:C{len(transposed_values)+1 +9*(product_order_id-1)+add_line_between}",
+        range_name=f"A{current_number_of_rows+1+add_line_between}:C{len(transposed_values)+1+current_number_of_rows+add_line_between}",
         values=transposed_values,
     )
 
@@ -39,7 +47,10 @@ def _update_spreadsheet_with_fetched_products(
 # sheet.format("A1:C1", format={"textFormat": {"bold": True}})
 
 # _update_spreadsheet_with_fetched_products(
-#     ["hi", "this", "a", "test"], ["hi", "this", "another", "test"]
+#     ["hi", "this", "a", "test"],
+#     ["hi", "this", "another", "test"],
+#     ["hi", "this", "another", "test"],
+#     2,
 # )
 
 
