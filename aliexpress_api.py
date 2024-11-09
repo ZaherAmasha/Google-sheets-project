@@ -25,9 +25,9 @@ def _update_spreadsheet_with_fetched_products(
     print("Transposed values: ", transposed_values)
     # to add an empty row betwee products for different keywords
     if product_order_id > 1:
-        add_line_between = 1
+        add_line_between = 3
     else:
-        add_line_between = 0
+        add_line_between = 1
 
     sheet.update(
         # range_name=f"A2:C{len(transposed_values)+1}",
