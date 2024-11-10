@@ -35,7 +35,7 @@ def _update_spreadsheet_with_fetched_products(
     # print("num of products: ", num_of_products_to_update)
     # print("num of products: ", len(transposed_values))
     # print("row count: ", len(sheet.col_values(1)))
-    if current_number_of_rows > 1:
+    if product_order_id == 1 and current_number_of_rows > 1:
         sheet.delete_rows(
             2, current_number_of_rows
         )  # clearing the cells from previous calls
