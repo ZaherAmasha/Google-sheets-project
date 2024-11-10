@@ -22,7 +22,7 @@ def _update_spreadsheet_with_fetched_products(
 
     values = [titles, image_names, prices]
     transposed_values = list(zip(*values))
-    print("Transposed values: ", transposed_values)
+    # print("Transposed values: ", transposed_values)
     # to add an empty row betwee products for different keywords
     if product_order_id > 1:
         add_line_between = 1
@@ -151,5 +151,5 @@ def fetch_aliexpress_product_recommendations(search_keyword, product_order_id):
 
 # examples:
 # fetch_aliexpress_product_recommendations("black shoes")
-fetch_aliexpress_product_recommendations("white shoes", 2)
+# fetch_aliexpress_product_recommendations("white shoes", 3)
 # fetch_aliexpress_product_recommendations("zzzzzzzzzzzzzzzzzzzzzz")
