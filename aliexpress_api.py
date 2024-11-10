@@ -20,7 +20,7 @@ def _update_spreadsheet_with_fetched_products(
 
     # get this from the url of the google sheet. It's between the /d/ and the /edit
     sheet_id = os.getenv("GOOGLE_SHEET_ID")
-    logger.info(f"this is the sheet id: {sheet_id}")
+    # logger.info(f"this is the sheet id: {sheet_id}")
     workbook = client.open_by_key(sheet_id)
     sheet = workbook.worksheet("Sheet2")
 
@@ -56,8 +56,9 @@ def _update_spreadsheet_with_fetched_products(
         range_name=f"A{current_number_of_rows+1+add_line_between}:C{len(transposed_values)+1+current_number_of_rows+add_line_between}",
         values=transposed_values,
     )
-    sheet.update_acell(f"B{product_order_id+1}", "Fetched Products Successfully")
-    sheet.format(f"B{product_order_id+1}", format={"backgroundColor": {"green": 1.0}})
+    sheet1 = workbook.worksheet("User Input")
+    sheet1.update_acell(f"B{product_order_id+1}", "Fetched Products Successfully")
+    sheet1.format(f"B{product_order_id+1}", format={"backgroundColor": {"green": 1.0}})
 
 
 # sheet.format("A1:C1", format={"textFormat": {"bold": True}})
