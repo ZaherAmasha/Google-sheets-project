@@ -1,3 +1,4 @@
+import gspread.utils
 import requests
 import os
 from bs4 import BeautifulSoup
@@ -7,6 +8,7 @@ import re
 from dotenv import load_dotenv
 
 from logger import logger
+from utils.utils import remove_elements_with_whitespaces_and_empty_from_list
 
 load_dotenv()
 
@@ -22,7 +24,8 @@ def _update_spreadsheet_with_fetched_products(
     sheet_id = os.getenv("GOOGLE_SHEET_ID")
     # logger.info(f"this is the sheet id: {sheet_id}")
     workbook = client.open_by_key(sheet_id)
-    sheet = workbook.worksheet("Sheet2")
+    sheet1 = workbook.worksheet("User Input")
+    sheet2 = workbook.worksheet("Sheet2")
 
     values = [titles, image_names, prices]
     transposed_values = list(zip(*values))
@@ -34,13 +37,43 @@ def _update_spreadsheet_with_fetched_products(
         add_line_between = 0
 
     # getting the number of rows in sheet2 so far
-    current_number_of_rows = len(sheet.col_values(1))
+    current_number_of_rows = len(sheet2.col_values(1))
     num_of_products_to_update = len(titles)
     logger.info(f"num of products: {num_of_products_to_update}")
     # print("num of products: ", len(transposed_values))
     # print("row count: ", len(sheet.col_values(1)))
+
+    # deleting the previous output messages in col B, sheet1 to write new ones
+    if product_order_id == 1:
+        current_number_of_rows_sheet1 = len(
+            sheet1.col_values(2)
+        )  # gets the number of rows in col B
+        print("current number of row col B sheet 1: ", current_number_of_rows_sheet1)
+        # sheet1.delete_dimension(
+        #     gspread.utils.Dimension.rows, 2, current_number_of_rows_sheet1
+        # )
+        sheet1.batch_clear([f"B2:B{current_number_of_rows_sheet1}"])
+        sheet1.format(
+            f"B2:B{current_number_of_rows_sheet1}",
+            format={
+                "backgroundColor": {"red": 1.0, "green": 1.0, "blue": 1.0}
+            },  # This is white
+        )
+        # sheet1.range(f"B2:B{current_number_of_rows_sheet1}").clear()
+        # sheet1.delete_named_range(f"B2:B{current_number_of_rows_sheet1}")
+        num_of_keywords = len(sheet1.col_values(1)) - 1
+        print("number of keywords: ", num_of_keywords)
+        sheet1.update(
+            f"B2:B{num_of_keywords+1}",
+            [["Fetching Product Recommendations"] for _ in range(num_of_keywords)],
+        )
+        sheet1.format(
+            f"B2:B{num_of_keywords+1}",
+            format={"backgroundColor": {"red": 1.0, "green": 1.0}},
+        )  # this is yellow in RGB
+
     if product_order_id == 1 and current_number_of_rows > 1:
-        sheet.delete_rows(
+        sheet2.delete_rows(
             2, current_number_of_rows
         )  # clearing the cells from previous calls
         current_number_of_rows = (
@@ -49,17 +82,17 @@ def _update_spreadsheet_with_fetched_products(
 
     # Ensure enough rows are available to accommodate new data. The .update method can't update non-existant rows
     required_rows = current_number_of_rows + num_of_products_to_update
-    if required_rows > sheet.row_count:
-        sheet.add_rows(required_rows - sheet.row_count)  # Add missing rows
+    if required_rows > sheet2.row_count:
+        sheet2.add_rows(required_rows - sheet2.row_count)  # Add missing rows
 
-    sheet.update(
+    sheet2.update(
         range_name=f"A{current_number_of_rows+1+add_line_between}:C{len(transposed_values)+1+current_number_of_rows+add_line_between}",
         values=transposed_values,
     )
-    sheet1 = workbook.worksheet("User Input")
+
     sheet1.update_acell(f"B{product_order_id+1}", "Fetched Products Successfully")
     sheet1.format(f"B{product_order_id+1}", format={"backgroundColor": {"green": 1.0}})
-    sheet1.update_acell(f"C2", "Retrieved the Products, See Sheet 2")
+    # sheet1.update_acell(f"C2", "Retrieved the Products, See Sheet 2")
 
 
 # sheet.format("A1:C1", format={"textFormat": {"bold": True}})
@@ -140,5 +173,5 @@ def fetch_aliexpress_product_recommendations(search_keyword, product_order_id):
 
 # examples:
 # fetch_aliexpress_product_recommendations("black shoes")
-# fetch_aliexpress_product_recommendations("white shoes", 3)
+fetch_aliexpress_product_recommendations("white shoes", 1)
 # fetch_aliexpress_product_recommendations("zzzzzzzzzzzzzzzzzzzzzz")
