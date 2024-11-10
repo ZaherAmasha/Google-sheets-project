@@ -4,8 +4,9 @@ from bs4 import BeautifulSoup
 import gspread
 from google.oauth2.service_account import Credentials
 import re
+from dotenv import load_dotenv
 
-# search_keyword = "black shoes"
+load_dotenv()
 
 
 def _update_spreadsheet_with_fetched_products(
@@ -16,7 +17,7 @@ def _update_spreadsheet_with_fetched_products(
     client = gspread.authorize(creds)
 
     # get this from the url of the google sheet. It's between the /d/ and the /edit
-    sheet_id = "1gVRn9ofufRWGHQjLOuVkPMC-2bjvGDXEObnbhfiedkc"
+    sheet_id = os.getenv("GOOGLE_SHEET_ID")
     workbook = client.open_by_key(sheet_id)
     sheet = workbook.worksheet("Sheet2")
 
@@ -32,7 +33,7 @@ def _update_spreadsheet_with_fetched_products(
     # getting the number of rows in sheet2 so far
     current_number_of_rows = len(sheet.col_values(1))
     num_of_products_to_update = len(titles)
-    # print("num of products: ", num_of_products_to_update)
+    print("num of products: ", num_of_products_to_update)
     # print("num of products: ", len(transposed_values))
     # print("row count: ", len(sheet.col_values(1)))
     if product_order_id == 1 and current_number_of_rows > 1:
@@ -49,11 +50,11 @@ def _update_spreadsheet_with_fetched_products(
         sheet.add_rows(required_rows - sheet.row_count)  # Add missing rows
 
     sheet.update(
-        # range_name=f"A2:C{len(transposed_values)+1}",
-        # range_name=f"A{2+9*(product_order_id-1)+add_line_between}:C{len(transposed_values)+1 +9*(product_order_id-1)+add_line_between}",
         range_name=f"A{current_number_of_rows+1+add_line_between}:C{len(transposed_values)+1+current_number_of_rows+add_line_between}",
         values=transposed_values,
     )
+    sheet.update_acell(f"B{product_order_id+1}", "Fetched Products Successfully")
+    sheet.format(f"B{product_order_id+1}", format={"backgroundColor": {"green": 1.0}})
 
 
 # sheet.format("A1:C1", format={"textFormat": {"bold": True}})

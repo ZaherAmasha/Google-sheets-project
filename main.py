@@ -29,8 +29,7 @@ async def update_recommended_products(
             raise HTTPException(status_code=401, detail="Unauthorized")
 
         keywords = update.keywords
-        # cell_range = update.range
-        print("keywords: ", keywords)  # , " ", cell_range)
+        print("keywords: ", keywords)
         # dropping the empty keywords
         keywords = [keyword for keyword in keywords if keyword.strip()]
         print("filtered keywords: ", keywords)
