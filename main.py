@@ -33,10 +33,10 @@ async def update_recommended_products(
             raise HTTPException(status_code=401, detail="Unauthorized")
 
         keywords = update.keywords
-        logger.info("keywords: ", keywords)
+        logger.info(f"keywords: {keywords}")
         # dropping the empty keywords
         keywords = [keyword for keyword in keywords if keyword.strip()]
-        logger.info("filtered keywords: ", keywords)
+        logger.info(f"filtered keywords: {keywords}")
         for product_order_id, keyword in enumerate(keywords):
             if fetch_aliexpress_product_recommendations(
                 keyword, product_order_id + 1
@@ -49,7 +49,7 @@ async def update_recommended_products(
 
         return "Fetching products from AliExpress went well"
     except Exception as e:
-        logger.exception("The exception printed: ", e)
+        logger.exception(f"The exception printed: {e}")
         raise HTTPException(status_code=500, detail=f"This is the exception: {e}")
 
 
