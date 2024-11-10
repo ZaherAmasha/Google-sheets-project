@@ -39,6 +39,14 @@ def _update_spreadsheet_with_fetched_products(
         sheet.delete_rows(
             2, current_number_of_rows
         )  # clearing the cells from previous calls
+        current_number_of_rows = (
+            1  # setting this manually instead of fetching using gspread
+        )
+
+    # Ensure enough rows are available to accommodate new data. The .update method can't update non-existant rows
+    required_rows = current_number_of_rows + num_of_products_to_update
+    if required_rows > sheet.row_count:
+        sheet.add_rows(required_rows - sheet.row_count)  # Add missing rows
 
     sheet.update(
         # range_name=f"A2:C{len(transposed_values)+1}",
@@ -143,5 +151,5 @@ def fetch_aliexpress_product_recommendations(search_keyword, product_order_id):
 
 # examples:
 # fetch_aliexpress_product_recommendations("black shoes")
-# fetch_aliexpress_product_recommendations("white shoes", 1)
+fetch_aliexpress_product_recommendations("white shoes", 2)
 # fetch_aliexpress_product_recommendations("zzzzzzzzzzzzzzzzzzzzzz")
