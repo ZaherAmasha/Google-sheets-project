@@ -59,6 +59,7 @@ def _update_spreadsheet_with_fetched_products(
     sheet1 = workbook.worksheet("User Input")
     sheet1.update_acell(f"B{product_order_id+1}", "Fetched Products Successfully")
     sheet1.format(f"B{product_order_id+1}", format={"backgroundColor": {"green": 1.0}})
+    sheet1.update_acell(f"C2", "Retrieved the Products, See Sheet 2")
 
 
 # sheet.format("A1:C1", format={"textFormat": {"bold": True}})
@@ -94,6 +95,7 @@ def fetch_aliexpress_product_recommendations(search_keyword, product_order_id):
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
     }
     response = requests.request("GET", url, headers=headers)
+    response.raise_for_status()  # to raise an exception when an exception happens, for debugging purposes. Without it, the response may be invalid and we wouldn't know immeadiately
 
     # with open("white_shoes_response_text.txt", "w") as output:
     #     output.write(response.text)
