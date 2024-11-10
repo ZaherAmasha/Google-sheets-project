@@ -6,6 +6,8 @@ from google.oauth2.service_account import Credentials
 import re
 from dotenv import load_dotenv
 
+from logger import logger
+
 load_dotenv()
 
 
@@ -33,7 +35,7 @@ def _update_spreadsheet_with_fetched_products(
     # getting the number of rows in sheet2 so far
     current_number_of_rows = len(sheet.col_values(1))
     num_of_products_to_update = len(titles)
-    print("num of products: ", num_of_products_to_update)
+    logger.info("num of products: ", num_of_products_to_update)
     # print("num of products: ", len(transposed_values))
     # print("row count: ", len(sheet.col_values(1)))
     if product_order_id == 1 and current_number_of_rows > 1:
@@ -99,20 +101,20 @@ def fetch_aliexpress_product_recommendations(search_keyword, product_order_id):
 
     # fetching the titles
     titles = soup.find_all("div", class_="multi--title--G7dOCj3")
-    print(f"found {len(titles)} titles")
+    logger.info(f"found {len(titles)} titles")
     for title in titles:
-        print("Title:", title.get_text(strip=True))
+        logger.info("Title:", title.get_text(strip=True))
 
     # fetching the image urls
-    image_urls = soup.find_all("img", class_="images--item--3XZa6xf")
-    print(f"found {len(image_urls)} images")
+    # image_urls = soup.find_all("img", class_="images--item--3XZa6xf")
+    # print(f"found {len(image_urls)} images")
 
-    # img_count = 0
-    for img_path in image_urls:
-        img_path = img_path.get("src")
-        if img_path.startswith("//"):
-            img_path = "https:" + img_path
-            print(f"Image: {img_path}")
+    # # img_count = 0
+    # for img_path in image_urls:
+    #     img_path = img_path.get("src")
+    #     if img_path.startswith("//"):
+    #         img_path = "https:" + img_path
+    #         print(f"Image: {img_path}")
 
     # fetching the urls for the individual products
     product_urls = soup.find_all(
@@ -125,7 +127,7 @@ def fetch_aliexpress_product_recommendations(search_keyword, product_order_id):
     # "multi--container--1UZxxHY cards--card--3PJxwBm search-card-item"
     # "multi--container--1UZxxHY cards--card--3PJxwBm search-card-item"
     # print("Type of product_urls: ", type(product_urls))
-    print(f"found {len(product_urls)} product urls")
+    logger.info(f"found {len(product_urls)} product urls")
     titles = [title.get_text(strip=True) for title in titles]
     product_urls = [
         ("https:" + product_url.get("href").strip()) for product_url in product_urls
@@ -134,9 +136,9 @@ def fetch_aliexpress_product_recommendations(search_keyword, product_order_id):
     #     print("Product url: ", product_url)
 
     prices = soup.find_all("div", class_="multi--price-sale--U-S0jtj")
-    print(f"Found {len(prices)} prices")
+    logger.info(f"Found {len(prices)} prices")
     for price in prices:
-        print(f"These are the prices: {price.get_text(strip=True)}")
+        logger.info(f"These are the prices: {price.get_text(strip=True)}")
     prices = [price.get_text(strip=True) for price in prices]
 
     # print("Products list: ", list(product_urls))
