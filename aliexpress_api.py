@@ -35,9 +35,10 @@ def _update_spreadsheet_with_fetched_products(
     # print("num of products: ", num_of_products_to_update)
     # print("num of products: ", len(transposed_values))
     # print("row count: ", len(sheet.col_values(1)))
-    sheet.delete_rows(
-        2, current_number_of_rows
-    )  # clearing the cells from previous calls
+    if current_number_of_rows > 1:
+        sheet.delete_rows(
+            2, current_number_of_rows
+        )  # clearing the cells from previous calls
 
     sheet.update(
         # range_name=f"A2:C{len(transposed_values)+1}",
@@ -142,5 +143,5 @@ def fetch_aliexpress_product_recommendations(search_keyword, product_order_id):
 
 # examples:
 # fetch_aliexpress_product_recommendations("black shoes")
-# fetch_aliexpress_product_recommendations("white shoes")
+# fetch_aliexpress_product_recommendations("white shoes", 1)
 # fetch_aliexpress_product_recommendations("zzzzzzzzzzzzzzzzzzzzzz")
