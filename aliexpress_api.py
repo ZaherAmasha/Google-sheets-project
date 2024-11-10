@@ -20,6 +20,7 @@ def _update_spreadsheet_with_fetched_products(
 
     # get this from the url of the google sheet. It's between the /d/ and the /edit
     sheet_id = os.getenv("GOOGLE_SHEET_ID")
+    logger.info(f"this is the sheet id: {sheet_id}")
     workbook = client.open_by_key(sheet_id)
     sheet = workbook.worksheet("Sheet2")
 
