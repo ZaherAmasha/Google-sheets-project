@@ -31,6 +31,9 @@ async def update_recommended_products(
         keywords = update.keywords
         # cell_range = update.range
         print("keywords: ", keywords)  # , " ", cell_range)
+        # dropping the empty keywords
+        keywords = [keyword for keyword in keywords if keyword.strip()]
+        print("filtered keywords: ", keywords)
         for product_order_id, keyword in enumerate(keywords):
             if fetch_aliexpress_product_recommendations(
                 keyword, product_order_id + 1
