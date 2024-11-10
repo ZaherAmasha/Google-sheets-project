@@ -45,6 +45,7 @@ async def update_recommended_products(
 
         return "Fetching products from AliExpress went well"
     except Exception as e:
+        print("The exception printed: ", e)
         raise HTTPException(status_code=500, detail=f"This is the exception: {e}")
 
 
