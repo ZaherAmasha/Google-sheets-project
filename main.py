@@ -6,7 +6,10 @@ import time
 import asyncio
 from typing import Dict
 
-from aliexpress_api import fetch_aliexpress_product_recommendations
+from aliexpress_api import (
+    fetch_aliexpress_product_recommendations,
+    signal_end_of_product_retrieval,
+)
 from models.fastapi_endpoints import SheetUpdate
 from utils.utils import remove_elements_with_whitespaces_and_empty_from_list
 from utils.api_utils import check_shared_secret_validity
@@ -54,7 +57,9 @@ async def fetch_products_async(task_id: str, keywords: list):
             else:
                 logger.error(f"Failed to fetch products for keyword: {keyword}")
                 return False
-
+        # signify end of product retrieval by updating the status cell in sheet 1
+        if not signal_end_of_product_retrieval():
+            return False
         return True
 
     except Exception as e:

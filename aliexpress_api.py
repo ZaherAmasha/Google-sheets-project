@@ -9,21 +9,26 @@ from dotenv import load_dotenv
 
 from logger import logger
 from utils.utils import remove_elements_with_whitespaces_and_empty_from_list
+from utils.sheet_utils import get_google_sheet_workbook
 
 load_dotenv()
+
+
+def signal_end_of_product_retrieval():
+    try:
+        workbook = get_google_sheet_workbook()
+        sheet1 = workbook.worksheet("User Input")
+        sheet1.update_acell(f"C2", "Retrieved the Products, See Sheet 2")
+        return True
+    except Exception as e:
+        logger.error(f"Something went wrong with updating the C2 cell in sheet 1: {e}")
+        return False
 
 
 def _update_spreadsheet_with_fetched_products(
     titles, image_names, prices, product_order_id
 ):
-    scopes = ["https://www.googleapis.com/auth/spreadsheets"]
-    creds = Credentials.from_service_account_file("credentials.json", scopes=scopes)
-    client = gspread.authorize(creds)
-
-    # get this from the url of the google sheet. It's between the /d/ and the /edit
-    sheet_id = os.getenv("GOOGLE_SHEET_ID")
-    # logger.info(f"this is the sheet id: {sheet_id}")
-    workbook = client.open_by_key(sheet_id)
+    workbook = get_google_sheet_workbook()
     sheet1 = workbook.worksheet("User Input")
     sheet2 = workbook.worksheet("Sheet2")
 
