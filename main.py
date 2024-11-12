@@ -5,15 +5,24 @@ import os
 import time
 import asyncio
 from typing import Dict
+import sys
 
-from aliexpress_api import (
+# Get the parent directory of the current file and add it to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from websites_to_fetch_from.aliexpress_api import (
     fetch_aliexpress_product_recommendations,
-    signal_end_of_product_retrieval,
 )
+
+# from websites_to_fetch_from.ishtari_api import
 from models.fastapi_endpoints import SheetUpdate
 from utils.utils import remove_elements_with_whitespaces_and_empty_from_list
 from utils.api_utils import check_shared_secret_validity
-from logger import logger
+from utils.sheet_utils import (
+    signal_end_of_product_retrieval,
+    update_spreadsheet_with_fetched_products,
+)
+from utils.logger import logger
 
 load_dotenv()
 
@@ -48,15 +57,25 @@ async def fetch_products_async(task_id: str, keywords: list):
             if cancel_flags[task_id]:
                 logger.info(f"Task {task_id} was cancelled")
                 return False
+            update_spreadsheet_with_fetched_products(
+                fetch_aliexpress_product_recommendations(keyword, product_order_id + 1),
+                product_order_id + 1,
+            )
+            logger.info(
+                f"Successfully fetched products from AliExpress for keyword: {keyword}"
+            )
+            await asyncio.sleep(
+                2
+            )  # Using asyncio.sleep instead of time.sleep since we are dealing with concurrency now
 
-            if fetch_aliexpress_product_recommendations(keyword, product_order_id + 1):
-                logger.info(f"Successfully fetched products for keyword: {keyword}")
-                await asyncio.sleep(
-                    2
-                )  # Using asyncio.sleep instead of time.sleep since we are dealing with concurrency now
-            else:
-                logger.error(f"Failed to fetch products for keyword: {keyword}")
-                return False
+            # if fetch_aliexpress_product_recommendations(keyword, product_order_id + 1):
+            #     logger.info(f"Successfully fetched products for keyword: {keyword}")
+            #     await asyncio.sleep(
+            #         2
+            #     )  # Using asyncio.sleep instead of time.sleep since we are dealing with concurrency now
+            # else:
+            #     logger.error(f"Failed to fetch products for keyword: {keyword}")
+            #     return False
         # signify end of product retrieval by updating the status cell in sheet 1
         if not signal_end_of_product_retrieval():
             return False
@@ -86,7 +105,7 @@ async def update_recommended_products(
         # Validate the shared secret
         check_shared_secret_validity(authorization, SHARED_SECRET)
 
-        # Generate a unique task ID every time
+        # Generates a unique task ID every time
         task_id = str(int(time.time()))
 
         # Create and store the task
