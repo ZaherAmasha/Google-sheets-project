@@ -60,6 +60,7 @@ async def fetch_products_async(task_id: str, keywords: list):
             update_spreadsheet_with_fetched_products(
                 fetch_aliexpress_product_recommendations(keyword, product_order_id + 1),
                 product_order_id + 1,
+                keyword,
             )
             logger.info(
                 f"Successfully fetched products from AliExpress for keyword: {keyword}"
@@ -85,7 +86,7 @@ async def fetch_products_async(task_id: str, keywords: list):
         logger.exception(f"Error in fetch_products_async: {e}")
         return False
     finally:
-        # Cleanup
+        # Cleanup. Without this the server could run out of memory over time
         if task_id in active_tasks:
             del active_tasks[task_id]
         if task_id in cancel_flags:

@@ -5,8 +5,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
-from utils.logger import logger
 from models.products import InputFetchedProducts
+from utils.logger import logger
 
 import gspread
 from google.oauth2.service_account import Credentials
@@ -26,17 +26,19 @@ def _get_google_sheet_workbook():
 
 
 def update_spreadsheet_with_fetched_products(
-    input_product_data: InputFetchedProducts, product_order_id
+    input_product_data: InputFetchedProducts, product_order_id, keyword
 ):
     try:
         workbook = _get_google_sheet_workbook()
         sheet1 = workbook.worksheet("User Input")
         sheet2 = workbook.worksheet("Sheet2")
 
+        # adding the name of the keyword of each product group on top of it
         values = [
-            input_product_data.product_names,
-            input_product_data.product_urls,
-            input_product_data.product_prices,
+            [f"Products for keyword: {keyword}"] + input_product_data.product_names,
+            [""] + input_product_data.product_prices,
+            [""] + input_product_data.product_urls,
+            [""] + input_product_data.website_source,
         ]
         transposed_values = list(zip(*values))
         # print("Transposed values: ", transposed_values)
@@ -48,7 +50,9 @@ def update_spreadsheet_with_fetched_products(
 
         # getting the number of rows in sheet2 so far
         current_number_of_rows = len(sheet2.col_values(1))
-        num_of_products_to_update = len(input_product_data.product_names)
+        num_of_products_to_update = (
+            len(input_product_data.product_names) + 1
+        )  # The +1 is because we are adding the name of the keyword on top of each product group
         logger.info(f"num of products: {num_of_products_to_update}")
         # print("num of products: ", len(transposed_values))
         # print("row count: ", len(sheet.col_values(1)))
@@ -97,8 +101,9 @@ def update_spreadsheet_with_fetched_products(
         if required_rows > sheet2.row_count:
             sheet2.add_rows(required_rows - sheet2.row_count)  # Add missing rows
 
+        # From A to D because we have 4 columns to fill with values
         sheet2.update(
-            range_name=f"A{current_number_of_rows+1+add_line_between}:C{len(transposed_values)+1+current_number_of_rows+add_line_between}",
+            range_name=f"A{current_number_of_rows+1+add_line_between}:D{len(transposed_values)+1+current_number_of_rows+add_line_between}",
             values=transposed_values,
         )
 
@@ -118,10 +123,12 @@ def update_spreadsheet_with_fetched_products(
 #         product_names=["hi", "this", "a", "test"],
 #         product_urls=["hi", "this", "another", "test"],
 #         product_prices=["hi", "this", "also another", "test"],
+#         website_source=["this", "is the", "website", "source"],
 #     ),
 #     # ["hi", "this", "a", "test"],
 #     # ["hi", "this", "another", "test"],
 #     # ["hi", "this", "also another", "test"],
+#     # ["this", "is the", "website", "source"]
 #     product_order_id=2,
 # )
 

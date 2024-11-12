@@ -90,6 +90,7 @@ def fetch_aliexpress_product_recommendations(
         product_names=list(titles),
         product_urls=list(product_urls),
         product_prices=list(prices),
+        website_source=["AliExpress" for _ in range(len(titles))],
     )
     # update_spreadsheet_with_fetched_products(
     #     titles=output_products.product_names,
@@ -103,5 +104,5 @@ def fetch_aliexpress_product_recommendations(
 
 # examples:
 # fetch_aliexpress_product_recommendations("black shoes")
-# fetch_aliexpress_product_recommendations("white shoes", 1)
+# print(fetch_aliexpress_product_recommendations("white shoes", 1))
 # fetch_aliexpress_product_recommendations("zzzzzzzzzzzzzzzzzzzzzz")
