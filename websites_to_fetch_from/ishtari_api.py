@@ -5,6 +5,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from models.products import OutputFetchedProducts
+from utils.logger import logger
 
 import requests
 import time
@@ -16,7 +17,7 @@ load_dotenv()
 ISHTARI_TOKEN = os.getenv("ISHTARI_TOKEN")
 
 
-def fetch_ishtari_product_recommendations(search_keyword, product_order_id):
+def _fetch_products(search_keyword, product_order_id):
     """Function that fetches products from ishtari.com. Due to how the website works, not all first
     requests return product data (they would return that already have the data cached). In which case,
     we do another request taking the type_id from the first response and add it as a query parameter
@@ -47,100 +48,124 @@ def fetch_ishtari_product_recommendations(search_keyword, product_order_id):
         "Sec-Fetch-Site": "same-origin",
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
     }
+    try:
+        # using a session maintains cookies across different requests
+        session = requests.Session()
 
-    # using a session maintains cookies across different requests
-    session = requests.Session()
-
-    # First request to get redirect info
-    response = session.get(initial_url, headers=headers)
-    response.raise_for_status()
-    initial_data = response.json()
-    print("This is the initial data: ", initial_data)
-    # print("This is the initial data: ")
-    if not initial_data.get("success"):
-        raise Exception("Initial request failed")
-    with open("ishtari_response.txt", "w") as output:
-        output.write(str(response.json()).replace("'", '"'))
-    # If we got a redirect, make the second request
-    if initial_data["data"].get("redirect") == "1":
-        print("trying the fetch again")
-        # a failed first request looks like: {"success":true,"data":{"redirect":"1","type":"category","type_id":"4006","is_cache":true}}
-        type_id = initial_data["data"].get("type_id")
-
-        # Construct the new URL for the actual product data. We assign the type id in the url, following how the website handles these redirects
-        product_url = f"https://www.ishtari.com/motor/v2/index.php?route=catalog/category&path={type_id}&source_id=1&limit={NUMBER_OF_PRODUCTS_TO_FETCH}"
-
-        # Add cache-busting parameters. Although the second call works without them, I'm keeping them.
-        headers.update(
-            {
-                "Cache-Control": "no-cache, no-store, must-revalidate",
-                "Pragma": "no-cache",
-                "Expires": "0",
-            }
-        )
-
-        # Small delay to prevent rate limiting
-        time.sleep(2)
-
-        # Making the second request
-        response = session.get(product_url, headers=headers)
+        # First request to get redirect info
+        response = session.get(initial_url, headers=headers)
         response.raise_for_status()
-        print("This is the response: ", response.text)
-        try:
-            product_data = response.json()
-            return product_data
-        except json.JSONDecodeError:
-            print("Failed to decode JSON response:")
-            print(response.text)
-            raise
-    else:
-        # If no redirect, return the initial data
-        return initial_data
+        initial_data = response.json()
+        logger.info(f"This is the initial data: {initial_data}")
+        # print("This is the initial data: ")
+        if not initial_data.get("success"):
+            raise Exception(f"Initial request failed: {response.text}")
+        # with open("ishtari_response.txt", "w") as output:
+        #     output.write(str(response.json()).replace("'", '"'))
+        # If we got a redirect, make the second request
+        if initial_data["data"].get("redirect") == "1":
+            logger.info("trying the fetch again")
+            # a failed first request looks like: {"success":true,"data":{"redirect":"1","type":"category","type_id":"4006","is_cache":true}}
+            type_id = initial_data["data"].get("type_id")
+
+            # Construct the new URL for the actual product data. We assign the type id in the url, following how the website handles these redirects
+            product_url = f"https://www.ishtari.com/motor/v2/index.php?route=catalog/category&path={type_id}&source_id=1&limit={NUMBER_OF_PRODUCTS_TO_FETCH}"
+
+            # Add cache-busting parameters. Although the second call works without them, I'm keeping them.
+            headers.update(
+                {
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0",
+                }
+            )
+
+            # Small delay to prevent rate limiting
+            time.sleep(2)
+
+            # Making the second request
+            response = session.get(product_url, headers=headers)
+            response.raise_for_status()
+            logger.info("This is the response: {response.text}")
+            try:
+                product_data = response.json()
+                return product_data
+            except json.JSONDecodeError:
+                logger.error("Failed to decode JSON response:")
+                logger.error(response.text)
+                raise
+        else:
+            # If no redirect, return the initial data
+            return initial_data
+    except Exception as e:
+        logger.info(f"Returning no products from Ishtari: {e}")
+        return {
+            "data": {
+                "products": [
+                    {
+                        "product_id": "null",
+                        "full_name": "No matched products from Ishtari.com",
+                        "name": "No matched products from Ishtari.com",
+                        "special": "",
+                    }
+                ]
+            }
+        }
 
 
-print(f"Bearer {ISHTARI_TOKEN}")
+# print(f"Bearer {ISHTARI_TOKEN}")
 
 
-def process_product_data(product_data):
+def _process_product_data(product_data):
     """Process the received product data"""
-    if not product_data.get("success"):
-        raise Exception("Failed to get product data")
-
+    # if not product_data.get("success"):
+    #     raise Exception("Failed to get product data")
+    logger.info(f"This is the product_data: {product_data}")
     products = product_data.get("data", {}).get("products", [])
 
     processed_products = []
     for product in products:
         processed_product = {
-            "id": product.get("product_id"),
+            # "id": product.get("product_id"),
             "name": product.get("full_name"),
-            "price": product.get("special"),
+            "price": "US " + product.get("special"),
             # "url": product.get(
             #     "product_link"
             # ),  # For some reason, this doesn't always exist
             # manually constructing the product url using the name and product id
-            # example: product_id="112115", name="Breathable Woven Black Mesh Sneaker", The product url would be: https://www.ishtari.com/Breathable-Woven-Black-Mesh-Sneaker/p=112115
-            "manual_url": f"https://www.ishtari.com/{product.get('name')[:-2].replace(' ', '-')}/p={product.get('product_id')}",
+            # example: product_id="112115", name=" Breathable Woven Black Mesh Sneaker ", The product url would be: https://www.ishtari.com/Breathable-Woven-Black-Mesh-Sneaker/p=112115
+            "manual_url": f"https://www.ishtari.com/{' '.join(product.get('name')[:-2].split()).replace(' ', '-')}/p={product.get('product_id')}",
         }
+        logger.info(
+            f"This is the original name before constructing the URL: {product.get('name')[:-2]}"
+        )
+        logger.info(
+            f"This is the name after constructing the URL: {product.get('name')[:-2].replace(' ', '-')}"
+        )
         processed_products.append(processed_product)
 
     output_products = OutputFetchedProducts(
         product_names=[product["name"] for product in processed_products],
         product_urls=[product["manual_url"] for product in processed_products],
         product_prices=[product["price"] for product in processed_products],
+        website_source=["Ishtari" for _ in range(len(processed_products))],
     )
     return output_products
-    # return processed_products
+
+
+def fetch_ishtari_product_recommendations(search_keyword, product_order_id):
+    return _process_product_data(_fetch_products(search_keyword, product_order_id))
 
 
 # Usage example
-try:
-    product_data = fetch_ishtari_product_recommendations(
-        "white shoes", "your-product-id"
-    )
-    print("Finished calling the fetch function")
-    products = process_product_data(product_data)
-    print(f"Found {len(products.product_names)} products:")
-    for product in products:
-        print(f"- {product}")
-except Exception as e:
-    print(f"Error: {str(e)}")
+# try:
+#     product_data = fetch_ishtari_product_recommendations(
+#         "white shoes", "1"
+#     )
+#     print("Finished calling the fetch function")
+#     products = process_product_data(product_data)
+#     print(f"Found {len(products.product_names)} products:")
+#     for product in products:
+#         print(f"- {product}")
+# except Exception as e:
+#     print(f"Error: {str(e)}")

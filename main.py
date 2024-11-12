@@ -13,6 +13,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from websites_to_fetch_from.aliexpress_api import (
     fetch_aliexpress_product_recommendations,
 )
+from websites_to_fetch_from.ishtari_api import fetch_ishtari_product_recommendations
 
 # from websites_to_fetch_from.ishtari_api import
 from models.fastapi_endpoints import SheetUpdate
@@ -57,8 +58,13 @@ async def fetch_products_async(task_id: str, keywords: list):
             if cancel_flags[task_id]:
                 logger.info(f"Task {task_id} was cancelled")
                 return False
+            logger.info(f"This is the product ID: {product_order_id+1}")
             update_spreadsheet_with_fetched_products(
-                fetch_aliexpress_product_recommendations(keyword, product_order_id + 1),
+                fetch_aliexpress_product_recommendations(
+                    keyword, product_order_id + 1
+                ).concatenate(
+                    fetch_ishtari_product_recommendations(keyword, product_order_id + 1)
+                ),
                 product_order_id + 1,
                 keyword,
             )
