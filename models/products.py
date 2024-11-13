@@ -10,7 +10,7 @@ class OutputFetchedProducts(BaseModel):
     website_source: List[str]
 
     def concatenate(self, other: "OutputFetchedProducts") -> "OutputFetchedProducts":
-        """To merge the products fetched from multiple websites into a single product groupt to
+        """To merge the products fetched from multiple websites into a single product group to
         be displayed in the spreadsheet"""
         return OutputFetchedProducts(
             product_names=self.product_names + other.product_names,

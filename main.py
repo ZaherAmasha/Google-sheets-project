@@ -121,23 +121,6 @@ async def update_recommended_products(
 
         return {"message": "Product fetch started", "task_id": task_id}
 
-        # keywords = update.keywords
-        # logger.info(f"keywords: {keywords}")
-        # # dropping the empty keywords
-        # keywords = remove_elements_with_whitespaces_and_empty_from_list(keywords)
-
-        # logger.info(f"filtered keywords: {keywords}")
-        # for product_order_id, keyword in enumerate(keywords):
-        #     if fetch_aliexpress_product_recommendations(
-        #         keyword, product_order_id + 1
-        #     ):  # the +1 is because it starts from 0
-        #         logger.info("Fetching products from AliExpress went well")
-        #         time.sleep(2)
-        #     else:
-        #         logger.error("Something went bad when fetching products")
-        #         return "Something went bad when fetching products"
-
-        # return "Fetching products from AliExpress went well"
     except Exception as e:
         logger.exception(f"The exception printed: {e}")
         raise HTTPException(status_code=500, detail=f"This is the exception: {e}")
