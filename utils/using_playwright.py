@@ -49,7 +49,8 @@ async def get_aliexpress_cookie_using_playwright():
             .replace("b_locale=ar_MA", "b_locale=en_US")
             .replace("c_tp=LBP", "c_tp=USD")
             .replace(
-                "site=glo&c_tp=SGD&region=SG", "site=glo&c_tp=SGD&region=SG"
+                "site=glo&c_tp=SGD&region=SG",
+                "site=glo&province=&city=&c_tp=USD&region=LB",
             )  # this is because playwright is picking up on Singapore when deployed on render
         )
         logger.info(
