@@ -1,4 +1,11 @@
-from utils.logger import logger
+import sys
+import os
+import asyncio
+
+# Get the parent directory of the current file and add it to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from logger import logger
 
 from playwright.async_api import async_playwright
 from time import time
@@ -81,32 +88,23 @@ async def get_ishtari_cookie_using_playwright():
         page = await context.new_page()
 
         # Navigate to the main URL
-        await page.goto("https://aliexpress.com", timeout=120000)  # in millisecond
+        await page.goto("https://www.ishtari.com", timeout=120000)  # in millisecond
+        await page.wait_for_load_state(
+            "networkidle"
+        )  # Wait until the page is fully loaded, otherwise we would get no cookies
 
-        cookie_for_requests = await context.cookies("https://aliexpress.com")
+        cookie_for_requests = await context.cookies("https://www.ishtari.com")
 
         # Close the browser
         await browser.close()
 
         print("Process finished")
+        # same process as the AliExpress cookie
         cookie = ""
         for item in cookie_for_requests:
-
             cookie = cookie + f"{item['name']}={item['value']}; "
-
-        # changing the language from Arabic to English and changing the location to the US/international
-        cookie = (
-            cookie.strip()[:-1]
-            .replace("region=LB&site=ara", "site=glo&province=&city=")
-            .replace("aep_usuc_f=site=ara", "aep_usuc_f=site=glo&province=&city=")
-            .replace("x_locale=ar_MA", "x_locale=en_US")
-            .replace("intl_locale=ar_MA", "intl_locale=en_US")
-            .replace("b_locale=ar_MA", "b_locale=en_US")
-            .replace("c_tp=LBP", "c_tp=USD")
-        )
-        logger.info(
-            f"Getting the AliExpress using Playwright took: {time()-start_time}"
-        )
+        cookie = cookie.strip()[:-1]
+        print(f"Getting the AliExpress using Playwright took: {time()-start_time}")
         return cookie
 
 
@@ -115,3 +113,12 @@ async def get_ishtari_cookie_using_playwright():
 # print("this is the cookie: ", response)
 # with open("playwright_response.txt", "w") as output:
 #     output.write(str(response))
+
+
+# Define the entry point
+async def main():
+    cookies = await get_ishtari_cookie_using_playwright()
+    print("Cookies fetched:", cookies)
+
+
+asyncio.run(main())
