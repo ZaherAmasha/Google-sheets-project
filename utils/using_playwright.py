@@ -48,9 +48,12 @@ async def get_aliexpress_cookie_using_playwright():
             .replace("intl_locale=ar_MA", "intl_locale=en_US")
             .replace("b_locale=ar_MA", "b_locale=en_US")
             .replace("c_tp=LBP", "c_tp=USD")
+            .replace(
+                "site=glo&c_tp=SGD&region=SG", "site=glo&c_tp=SGD&region=SG"
+            )  # this is because playwright is picking up on Singapore when deployed on render
         )
         logger.info(
-            f"Getting the AliExpress using Playwright took: {time()-start_time}"
+            f"Getting the AliExpress Cookie using Playwright took: {time()-start_time}"
         )
         return cookie
 
