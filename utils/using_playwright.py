@@ -1,18 +1,18 @@
 from utils.logger import logger
 
-from playwright.sync_api import sync_playwright
+from playwright.async_api import async_playwright
 from time import time
 
 
-def get_aliexpress_cookie_using_playwright():
+async def get_aliexpress_cookie_using_playwright():
     start_time = time()
-    with sync_playwright() as p:
+    async with async_playwright() as p:
         # Launch chrome browser
-        browser = p.chromium.launch(headless=True)
+        browser = await p.chromium.launch(headless=True)
 
         # Open a new browser context (isolated session). Even though I'm setting the location to be US
         # it's not working
-        context = browser.new_context(
+        context = await browser.new_context(
             geolocation={
                 "latitude": 37.7749,
                 "longitude": -122.4194,
@@ -22,15 +22,15 @@ def get_aliexpress_cookie_using_playwright():
         )
 
         # Open a new page
-        page = context.new_page()
+        page = await context.new_page()
 
         # Navigate to the main URL
-        page.goto("https://aliexpress.com", timeout=120000)  # in millisecond
+        await page.goto("https://aliexpress.com", timeout=120000)  # in millisecond
 
-        cookie_for_requests = context.cookies("https://aliexpress.com")
+        cookie_for_requests = await context.cookies("https://aliexpress.com")
 
         # Close the browser
-        browser.close()
+        await browser.close()
 
         print("Process finished")
         cookie = ""

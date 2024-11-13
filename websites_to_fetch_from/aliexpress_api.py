@@ -7,6 +7,7 @@ from google.oauth2.service_account import Credentials
 import re
 from dotenv import load_dotenv
 import sys
+import asyncio
 
 # Get the parent directory of the current file and add it to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -25,7 +26,7 @@ def fetch_aliexpress_product_recommendations(
     search_keyword, product_order_id
 ) -> OutputFetchedProducts:
 
-    cookie = get_aliexpress_cookie_using_playwright()
+    cookie = asyncio.run(get_aliexpress_cookie_using_playwright())
     logger.info("Got the AliExpress cookie using Playwright")
     url = f"https://www.aliexpress.com/w/wholesale-{search_keyword}.html"  # ?spm=a2g0o.productlist.search.0"
 
