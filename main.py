@@ -20,6 +20,7 @@ from models.fastapi_endpoints import SheetUpdate
 from utils.utils import remove_elements_with_whitespaces_and_empty_from_list
 from utils.api_utils import check_shared_secret_validity
 from utils.sheet_utils import (
+    signal_start_of_product_retrieval,
     signal_end_of_product_retrieval,
     update_spreadsheet_with_fetched_products,
 )
@@ -53,6 +54,10 @@ async def fetch_products_async(task_id: str, keywords: list):
         cancel_flags[task_id] = False
         keywords = remove_elements_with_whitespaces_and_empty_from_list(keywords)
         logger.info(f"filtered keywords: {keywords}")
+
+        # Update the status cells in sheet1
+        if not signal_start_of_product_retrieval():
+            return False
 
         # get the aliexpress cookie before the generation
         cookie = await get_aliexpress_cookie_using_playwright()

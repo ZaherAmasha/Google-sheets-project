@@ -5,7 +5,7 @@ import asyncio
 # Get the parent directory of the current file and add it to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from logger import logger
+from utils.logger import logger
 
 from playwright.async_api import async_playwright
 from time import time
@@ -116,9 +116,9 @@ async def get_ishtari_cookie_using_playwright():
 
 
 # Define the entry point
-async def main():
-    cookies = await get_ishtari_cookie_using_playwright()
-    print("Cookies fetched:", cookies)
+# async def main():
+#     cookies = await get_ishtari_cookie_using_playwright()
+#     print("Cookies fetched:", cookies)
 
 
-asyncio.run(main())
+# asyncio.run(main())

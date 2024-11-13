@@ -53,40 +53,40 @@ def update_spreadsheet_with_fetched_products(
         num_of_products_to_update = (
             len(input_product_data.product_names) + 1
         )  # The +1 is because we are adding the name of the keyword on top of each product group
-        logger.info(f"num of products: {num_of_products_to_update}")
-        # print("num of products: ", len(transposed_values))
-        # print("row count: ", len(sheet.col_values(1)))
+        # logger.info(f"num of products: {num_of_products_to_update}")
+        # # print("num of products: ", len(transposed_values))
+        # # print("row count: ", len(sheet.col_values(1)))
 
-        # deleting the previous output messages in col B, sheet1 to write new ones
-        if product_order_id == 1:
-            current_number_of_rows_sheet1 = len(
-                sheet1.col_values(2)
-            )  # gets the number of rows in col B
-            print(
-                "current number of row col B sheet 1: ", current_number_of_rows_sheet1
-            )
-            # sheet1.delete_dimension(
-            #     gspread.utils.Dimension.rows, 2, current_number_of_rows_sheet1
-            # )
-            sheet1.batch_clear([f"B2:B{current_number_of_rows_sheet1}"])
-            sheet1.format(
-                f"B2:B{current_number_of_rows_sheet1}",
-                format={
-                    "backgroundColor": {"red": 1.0, "green": 1.0, "blue": 1.0}
-                },  # This is white
-            )
-            # sheet1.range(f"B2:B{current_number_of_rows_sheet1}").clear()
-            # sheet1.delete_named_range(f"B2:B{current_number_of_rows_sheet1}")
-            num_of_keywords = len(sheet1.col_values(1)) - 1
-            print("number of keywords: ", num_of_keywords)
-            sheet1.update(
-                f"B2:B{num_of_keywords+1}",
-                [["Fetching Product Recommendations"] for _ in range(num_of_keywords)],
-            )
-            sheet1.format(
-                f"B2:B{num_of_keywords+1}",
-                format={"backgroundColor": {"red": 1.0, "green": 1.0}},
-            )  # this is yellow in RGB
+        # # deleting the previous output messages in col B, sheet1 to write new ones
+        # if product_order_id == 1:
+        #     current_number_of_rows_sheet1 = len(
+        #         sheet1.col_values(2)
+        #     )  # gets the number of rows in col B
+        #     print(
+        #         "current number of row col B sheet 1: ", current_number_of_rows_sheet1
+        #     )
+        #     # sheet1.delete_dimension(
+        #     #     gspread.utils.Dimension.rows, 2, current_number_of_rows_sheet1
+        #     # )
+        #     sheet1.batch_clear([f"B2:B{current_number_of_rows_sheet1}"])
+        #     sheet1.format(
+        #         f"B2:B{current_number_of_rows_sheet1}",
+        #         format={
+        #             "backgroundColor": {"red": 1.0, "green": 1.0, "blue": 1.0}
+        #         },  # This is white
+        #     )
+        #     # sheet1.range(f"B2:B{current_number_of_rows_sheet1}").clear()
+        #     # sheet1.delete_named_range(f"B2:B{current_number_of_rows_sheet1}")
+        #     num_of_keywords = len(sheet1.col_values(1)) - 1
+        #     print("number of keywords: ", num_of_keywords)
+        #     sheet1.update(
+        #         f"B2:B{num_of_keywords+1}",
+        #         [["Fetching Product Recommendations"] for _ in range(num_of_keywords)],
+        #     )
+        #     sheet1.format(
+        #         f"B2:B{num_of_keywords+1}",
+        #         format={"backgroundColor": {"red": 1.0, "green": 1.0}},
+        #     )  # this is yellow in RGB
 
         if product_order_id == 1 and current_number_of_rows > 1:
             sheet2.delete_rows(
@@ -133,6 +133,52 @@ def update_spreadsheet_with_fetched_products(
 # )
 
 
+def signal_start_of_product_retrieval():
+    try:
+        workbook = _get_google_sheet_workbook()
+        sheet1 = workbook.worksheet("User Input")
+        # getting the number of rows in sheet2 so far
+        # current_number_of_rows = len(sheet2.col_values(1))
+        # num_of_products_to_update = (
+        #     len(input_product_data.product_names) + 1
+        # )  # The +1 is because we are adding the name of the keyword on top of each product group
+        # logger.info(f"num of products: {num_of_products_to_update}")
+        # print("num of products: ", len(transposed_values))
+        # print("row count: ", len(sheet.col_values(1)))
+
+        # deleting the previous output messages in col B, sheet1 to write new ones
+        current_number_of_rows_sheet1 = len(
+            sheet1.col_values(2)
+        )  # gets the number of rows in col B
+        print("current number of row col B sheet 1: ", current_number_of_rows_sheet1)
+
+        sheet1.batch_clear([f"B2:B{current_number_of_rows_sheet1}"])
+        sheet1.format(
+            f"B2:B{current_number_of_rows_sheet1}",
+            format={
+                "backgroundColor": {"red": 1.0, "green": 1.0, "blue": 1.0}
+            },  # This is white
+        )
+        # sheet1.range(f"B2:B{current_number_of_rows_sheet1}").clear()
+        # sheet1.delete_named_range(f"B2:B{current_number_of_rows_sheet1}")
+        num_of_keywords = len(sheet1.col_values(1)) - 1
+        print("number of keywords: ", num_of_keywords)
+        sheet1.update(
+            f"B2:B{num_of_keywords+1}",
+            [["Fetching Product Recommendations"] for _ in range(num_of_keywords)],
+        )
+        sheet1.format(
+            f"B2:B{num_of_keywords+1}",
+            format={"backgroundColor": {"red": 1.0, "green": 1.0}},
+        )  # this is yellow in RGB
+        return True
+    except Exception as e:
+        logger.error(
+            f"Something went wrong with updating the B status cells in sheet 1: {e}"
+        )
+        return False
+
+
 def signal_end_of_product_retrieval():
     try:
         workbook = _get_google_sheet_workbook()
@@ -140,5 +186,7 @@ def signal_end_of_product_retrieval():
         sheet1.update_acell("C2", "Retrieved the Products, See Sheet 2")
         return True
     except Exception as e:
-        logger.error(f"Something went wrong with updating the C2 cell in sheet 1: {e}")
+        logger.error(
+            f"Something went wrong with updating the C2 status cell in sheet 1: {e}"
+        )
         return False
