@@ -25,7 +25,7 @@ def get_aliexpress_cookie_using_playwright():
         page = context.new_page()
 
         # Navigate to the main URL
-        page.goto("https://aliexpress.com", timeout=60000)  # in millisecond
+        page.goto("https://aliexpress.com", timeout=120000)  # in millisecond
 
         cookie_for_requests = context.cookies("https://aliexpress.com")
 

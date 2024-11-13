@@ -105,5 +105,5 @@ def fetch_aliexpress_product_recommendations(
 
 # examples:
 # fetch_aliexpress_product_recommendations("black shoes")
-print(fetch_aliexpress_product_recommendations("white shoes", 1))
+# print(fetch_aliexpress_product_recommendations("white shoes", 1))
 # fetch_aliexpress_product_recommendations("zzzzzzzzzzzzzzzzzzzzzz")
