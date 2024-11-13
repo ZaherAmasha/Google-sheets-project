@@ -158,6 +158,8 @@ def fetch_ishtari_product_recommendations(search_keyword, product_order_id):
     return _process_product_data(_fetch_products(search_keyword, product_order_id))
 
 
+# print(fetch_ishtari_product_recommendations("white shoes", 1))
+
 # Usage example
 # try:
 #     product_data = fetch_ishtari_product_recommendations(

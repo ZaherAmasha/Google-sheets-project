@@ -22,12 +22,10 @@ from models.products import OutputFetchedProducts
 load_dotenv()
 
 
-def fetch_aliexpress_product_recommendations(
-    search_keyword, product_order_id
+async def fetch_aliexpress_product_recommendations(
+    search_keyword, product_order_id, cookie
 ) -> OutputFetchedProducts:
 
-    cookie = asyncio.run(get_aliexpress_cookie_using_playwright())
-    logger.info("Got the AliExpress cookie using Playwright")
     url = f"https://www.aliexpress.com/w/wholesale-{search_keyword}.html"  # ?spm=a2g0o.productlist.search.0"
 
     headers = {

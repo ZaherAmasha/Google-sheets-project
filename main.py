@@ -24,6 +24,7 @@ from utils.sheet_utils import (
     update_spreadsheet_with_fetched_products,
 )
 from utils.logger import logger
+from utils.using_playwright import get_aliexpress_cookie_using_playwright
 
 load_dotenv()
 
@@ -53,18 +54,26 @@ async def fetch_products_async(task_id: str, keywords: list):
         keywords = remove_elements_with_whitespaces_and_empty_from_list(keywords)
         logger.info(f"filtered keywords: {keywords}")
 
+        # get the aliexpress cookie before the generation
+        cookie = await get_aliexpress_cookie_using_playwright()
+        logger.info("Got the AliExpress cookie using Playwright")
+
         for product_order_id, keyword in enumerate(keywords):
             # Check if cancellation was requested
             if cancel_flags[task_id]:
                 logger.info(f"Task {task_id} was cancelled")
                 return False
             logger.info(f"This is the product ID: {product_order_id+1}")
+            ali_express_fetched_products = (
+                await fetch_aliexpress_product_recommendations(
+                    keyword, product_order_id + 1, cookie
+                )
+            )
+            ishtari_fetched_products = fetch_ishtari_product_recommendations(
+                keyword, product_order_id + 1
+            )
             update_spreadsheet_with_fetched_products(
-                fetch_aliexpress_product_recommendations(
-                    keyword, product_order_id + 1
-                ).concatenate(
-                    fetch_ishtari_product_recommendations(keyword, product_order_id + 1)
-                ),
+                ali_express_fetched_products.concatenate(ishtari_fetched_products),
                 product_order_id + 1,
                 keyword,
             )
@@ -75,14 +84,6 @@ async def fetch_products_async(task_id: str, keywords: list):
                 2
             )  # Using asyncio.sleep instead of time.sleep since we are dealing with concurrency now
 
-            # if fetch_aliexpress_product_recommendations(keyword, product_order_id + 1):
-            #     logger.info(f"Successfully fetched products for keyword: {keyword}")
-            #     await asyncio.sleep(
-            #         2
-            #     )  # Using asyncio.sleep instead of time.sleep since we are dealing with concurrency now
-            # else:
-            #     logger.error(f"Failed to fetch products for keyword: {keyword}")
-            #     return False
         # signify end of product retrieval by updating the status cell in sheet 1
         if not signal_end_of_product_retrieval():
             return False
