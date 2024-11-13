@@ -6,3 +6,4 @@ google-api-python-client==2.151.0
 google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.1
 gspread==6.1.4
+playwright==1.48.0
