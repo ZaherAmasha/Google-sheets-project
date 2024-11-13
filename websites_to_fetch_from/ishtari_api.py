@@ -11,6 +11,7 @@ import requests
 import time
 import json
 from dotenv import load_dotenv
+import traceback
 
 load_dotenv()
 
@@ -18,8 +19,8 @@ ISHTARI_TOKEN = os.getenv("ISHTARI_TOKEN")
 
 
 def _fetch_products(search_keyword, product_order_id):
-    """Function that fetches products from ishtari.com. Due to how the website works, not all first
-    requests return product data (they would return that already have the data cached). In which case,
+    """Function that fetches products from ishtari.com. Due to how the website works (not sure why), not all first
+    requests return product data (they would return that we already have the data cached). In which case,
     we do another request taking the type_id from the first response and add it as a query parameter
     'path' in the api url. type_id seems to be referring to discrete product groups which could mean that
     there's a finite number of possible results to be fetched on this website and it's not a dynamic process.
@@ -37,9 +38,8 @@ def _fetch_products(search_keyword, product_order_id):
         # "Authorization": f"Bearer d75ce26facce58a67378e89a23910a8e7ff940ea",  # Ishtari token seem to expire every 12 hours or so
         "Cache-Control": "no-cache",
         "Pragma": "no-cache",
-        # "Cookie": f"__Host-next-auth.csrf-token=e6578cc1add6b9bd1a3b91e27576b9ae416c83a807ec23be8222e5e56fb4dec8%7Ca4c2c4d8eb05d7be1b34092b60b1bc9d016b7fd249c3b5e21536c044520f0f2a; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token={ISHTARI_TOKEN}",
-        "Cookie": f"__Host-next-auth.csrf-token=231d03e9664f7b45242fe3cdd6ecb98a81af5f0d47315f4c864237bbdd9765fa%7C018ab6b3595fbd6385e4d2ddd1962345f55d1ec219558a6f2a2dcb3cc45c3d1d; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token=d75ce26facce58a67378e89a23910a8e7ff940ea; _gcl_au=1.1.405635998.1731360359",
-        #    '__Host-next-auth.csrf-token=53733336ab32d9c486bb724fe1c24f0f8661ffe4788fadd9bd6eb8c85031bb0c%7Cae36fcd84a54abe446877e567381a9f9f4abe2981cf906f8e10d3b3259bbf97b; Path=/; HttpOnly; Secure; SameSite=Lax'
+        "Cookie": f"__Host-next-auth.csrf-token=e6578cc1add6b9bd1a3b91e27576b9ae416c83a807ec23be8222e5e56fb4dec8%7Ca4c2c4d8eb05d7be1b34092b60b1bc9d016b7fd249c3b5e21536c044520f0f2a; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token={ISHTARI_TOKEN}",
+        # "Cookie": f"__Host-next-auth.csrf-token=231d03e9664f7b45242fe3cdd6ecb98a81af5f0d47315f4c864237bbdd9765fa%7C018ab6b3595fbd6385e4d2ddd1962345f55d1ec219558a6f2a2dcb3cc45c3d1d; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token=d75ce26facce58a67378e89a23910a8e7ff940ea; _gcl_au=1.1.405635998.1731360359",
         "Referer": f"https://www.ishtari.com/search?keyword={search_keyword}",
         "Sec-Ch-Ua": '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
         "Sec-Ch-Ua-Mobile": "?0",
@@ -99,7 +99,8 @@ def _fetch_products(search_keyword, product_order_id):
             # If no redirect, return the initial data
             return initial_data
     except Exception as e:
-        logger.info(f"Returning no products from Ishtari: {e}")
+        # logger.info(f"Returning no products from Ishtari: {e}\n{traceback.format_exc()}")
+        logger.error(f"Returning no products from Ishtari: {e}}")
         return {
             "data": {
                 "products": [
@@ -158,7 +159,8 @@ def fetch_ishtari_product_recommendations(search_keyword, product_order_id):
     return _process_product_data(_fetch_products(search_keyword, product_order_id))
 
 
-# print(fetch_ishtari_product_recommendations("white shoes", 1))
+# if __name__ == "__main__":
+#     print(fetch_ishtari_product_recommendations("white shoes", 1))
 
 # Usage example
 # try:
