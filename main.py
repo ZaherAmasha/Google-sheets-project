@@ -56,7 +56,7 @@ async def fetch_products_async(task_id: str, keywords: list):
 
         # get the aliexpress cookie before the generation
         cookie = await get_aliexpress_cookie_using_playwright()
-        logger.info("Got the AliExpress cookie using Playwright")
+        logger.info(f"Got the AliExpress cookie using Playwright: {cookie}")
 
         for product_order_id, keyword in enumerate(keywords):
             # Check if cancellation was requested
