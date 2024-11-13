@@ -100,7 +100,9 @@ def _fetch_products(search_keyword, product_order_id):
             return initial_data
     except Exception as e:
         # logger.info(f"Returning no products from Ishtari: {e}\n{traceback.format_exc()}")
-        logger.error(f"Returning no products from Ishtari: {e}")
+        logger.error(
+            f"Returning no products from Ishtari: {e}\n{traceback.format_exc()}"
+        )
         return {
             "data": {
                 "products": [
