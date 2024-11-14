@@ -13,6 +13,7 @@ import json
 from dotenv import load_dotenv
 import traceback
 import re
+import gzip
 
 load_dotenv()
 
@@ -91,6 +92,19 @@ def _fetch_products(search_keyword, product_order_id, cookie=None):
         # '__Host-next-auth.csrf-token=53733336ab32d9c486bb724fe1c24f0f8661ffe4788fadd9bd6eb8c85031bb0c%7Cae36fcd84a54abe446877e567381a9f9f4abe2981cf906f8e10d3b3259bbf97b; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com'
         # First request to get redirect info
         response = session.get(initial_url, headers=headers)
+        logger.info(f"These are the response headers: {response.headers}")
+        # Check if response is compressed
+        if response.headers.get("content-encoding") == "gzip":
+            try:
+                # Manually decompress gzip content
+                logger.info(f"Trying to decompress the response content")
+                decompressed_content = gzip.decompress(response.content)
+                logger.info(f"Successfully decompressed gzip content")
+                response._content = decompressed_content
+            except Exception as e:
+                logger.error(f"Failed to decompress content: {e}")
+                return None
+
         response.raise_for_status()
         logger.info(f"This is the initial response: {response.content}")
         initial_data = response.json()

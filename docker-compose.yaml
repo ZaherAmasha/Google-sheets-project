@@ -1,0 +1,12 @@
+version: '3'
+services:
+  master:
+    build: .
+    # container_name: fastapi-google-sheets-app
+    # image: google-sheets-async
+    restart: always
+    ports:
+      - 8000:8000
+    volumes:
+      #from the root python project locally to the container
+      - .:/app
