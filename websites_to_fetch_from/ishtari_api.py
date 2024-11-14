@@ -56,6 +56,7 @@ def _fetch_products(search_keyword, product_order_id):
         # First request to get redirect info
         response = session.get(initial_url, headers=headers)
         response.raise_for_status()
+        logger.info(f"This is the initial response: {response}")
         initial_data = response.json()
         logger.info(f"This is the initial data: {initial_data}")
         # print("This is the initial data: ")
@@ -161,8 +162,8 @@ def fetch_ishtari_product_recommendations(search_keyword, product_order_id):
     return _process_product_data(_fetch_products(search_keyword, product_order_id))
 
 
-# if __name__ == "__main__":
-#     print(fetch_ishtari_product_recommendations("white shoes", 1))
+if __name__ == "__main__":
+    print(fetch_ishtari_product_recommendations("white shoes", 1))
 
 # Usage example
 # try:
