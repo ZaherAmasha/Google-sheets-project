@@ -7,3 +7,4 @@ google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.1
 gspread==6.1.4
 playwright==1.48.0
+brotli==1.1.0 # necessary inside the docker container to decode the response data from ishtari, the playwright image doesn't have it by default
