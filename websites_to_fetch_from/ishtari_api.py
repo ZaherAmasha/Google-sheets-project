@@ -92,7 +92,7 @@ def _fetch_products(search_keyword, product_order_id, cookie=None):
         # First request to get redirect info
         response = session.get(initial_url, headers=headers)
         response.raise_for_status()
-        logger.info(f"This is the initial response: {response.text.decode('utf-8')}")
+        logger.info(f"This is the initial response: {response.content}")
         initial_data = response.json()
         logger.info(f"This is the initial data: {initial_data}")
         # print("This is the initial data: ")
@@ -101,7 +101,7 @@ def _fetch_products(search_keyword, product_order_id, cookie=None):
         # with open("ishtari_response.txt", "w") as output:
         #     output.write(str(response.json()).replace("'", '"'))
         # If we got a redirect, make the second request
-        initial_data["data"]["redirect"] = 1
+        # initial_data["data"]["redirect"] = 1
         if initial_data["data"].get("redirect") == "1":
             logger.info("trying the fetch again")
             # a failed first request looks like: {"success":true,"data":{"redirect":"1","type":"category","type_id":"4006","is_cache":true}}
@@ -125,7 +125,7 @@ def _fetch_products(search_keyword, product_order_id, cookie=None):
             # Making the second request
             response = session.get(product_url, headers=headers)
             # response.raise_for_status()
-            logger.info(f"This is the response: {response.text.decode('utf-8')}")
+            logger.info(f"This is the response: {response.text}")
             try:
                 product_data = response.json()
                 return product_data
