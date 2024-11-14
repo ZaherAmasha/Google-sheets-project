@@ -5,6 +5,8 @@ import os
 import time
 import asyncio
 from typing import Dict
+from contextlib import asynccontextmanager
+
 import sys
 
 # Get the parent directory of the current file and add it to sys.path
@@ -18,7 +20,11 @@ from websites_to_fetch_from.ishtari_api import fetch_ishtari_product_recommendat
 # from websites_to_fetch_from.ishtari_api import
 from models.fastapi_endpoints import SheetUpdate
 from utils.utils import remove_elements_with_whitespaces_and_empty_from_list
-from utils.api_utils import check_shared_secret_validity
+from utils.api_utils import (
+    check_shared_secret_validity,
+    ALIEXPRESS_COOKIE,
+    ISHTARI_COOKIE,
+)
 from utils.sheet_utils import (
     signal_start_of_product_retrieval,
     signal_end_of_product_retrieval,
@@ -26,14 +32,38 @@ from utils.sheet_utils import (
 )
 from utils.logger import logger
 
-# from utils.using_playwright import (
-#     get_aliexpress_cookie_using_playwright,
-#     get_ishtari_cookie_using_playwright,
-# )
+from utils.using_playwright import (
+    get_aliexpress_cookie_using_playwright,
+    get_ishtari_cookie_using_playwright,
+)
 
 load_dotenv()
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        # on startup:
+        # We fetch the cookies and load them in memory on server startup so that we don't have to fetch
+        # them when needed and increase the wait time to get the products for the user
+        logger.info(
+            "Server has started successfully, Fetching the AliExpress and Ishtari Cookies"
+        )
+        ALIEXPRESS_COOKIE.cookie = await get_aliexpress_cookie_using_playwright()
+        ISHTARI_COOKIE.cookie = await get_ishtari_cookie_using_playwright()
+        logger.info("Got the cookies successfully")
+
+        yield
+
+        # on shutdown:
+        logger.info("Server shutting down")
+
+    except Exception as e:
+        logger.error(f"Failed to initialize server: {e}")
+        raise
+
+
+app = FastAPI(lifespan=lifespan)
 
 SHARED_SECRET = os.getenv("SHARED_SECRET")
 
