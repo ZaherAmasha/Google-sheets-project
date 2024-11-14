@@ -124,7 +124,7 @@ def _fetch_products(search_keyword, product_order_id, cookie=None):
             # Making the second request
             response = session.get(product_url, headers=headers)
             # response.raise_for_status()
-            logger.info("This is the response: {response.text}")
+            logger.info(f"This is the response: {response.text.decode("utf-8")}")
             try:
                 product_data = response.json()
                 return product_data
