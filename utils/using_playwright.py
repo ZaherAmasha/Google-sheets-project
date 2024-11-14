@@ -90,7 +90,7 @@ async def get_ishtari_cookie_using_playwright():
         # Navigate to the main URL
         await page.goto("https://www.ishtari.com", timeout=120000)  # in millisecond
         await page.wait_for_load_state(
-            "networkidle"
+            "networkidle", timeout=120000
         )  # Wait until the page is fully loaded, otherwise we would get no cookies
 
         cookie_for_requests = await context.cookies("https://www.ishtari.com")

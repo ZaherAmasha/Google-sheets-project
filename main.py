@@ -25,7 +25,10 @@ from utils.sheet_utils import (
     update_spreadsheet_with_fetched_products,
 )
 from utils.logger import logger
-from utils.using_playwright import get_aliexpress_cookie_using_playwright
+from utils.using_playwright import (
+    get_aliexpress_cookie_using_playwright,
+    get_ishtari_cookie_using_playwright,
+)
 
 load_dotenv()
 
@@ -60,8 +63,11 @@ async def fetch_products_async(task_id: str, keywords: list):
             return False
 
         # get the aliexpress cookie before the generation
-        cookie = await get_aliexpress_cookie_using_playwright()
-        logger.info(f"Got the AliExpress cookie using Playwright: {cookie}")
+        aliexpress_cookie = await get_aliexpress_cookie_using_playwright()
+        logger.info(f"Got the AliExpress cookie using Playwright: {aliexpress_cookie}")
+
+        ishtari_cookie = await get_ishtari_cookie_using_playwright()
+        logger.info(f"Got the Ishtari cookie using Playwright: {ishtari_cookie}")
 
         for product_order_id, keyword in enumerate(keywords):
             # Check if cancellation was requested
@@ -71,11 +77,11 @@ async def fetch_products_async(task_id: str, keywords: list):
             logger.info(f"This is the product ID: {product_order_id+1}")
             ali_express_fetched_products = (
                 await fetch_aliexpress_product_recommendations(
-                    keyword, product_order_id + 1, cookie
+                    keyword, product_order_id + 1, aliexpress_cookie
                 )
             )
             ishtari_fetched_products = fetch_ishtari_product_recommendations(
-                keyword, product_order_id + 1
+                keyword, product_order_id + 1, ishtari_cookie
             )
             update_spreadsheet_with_fetched_products(
                 ali_express_fetched_products.concatenate(ishtari_fetched_products),

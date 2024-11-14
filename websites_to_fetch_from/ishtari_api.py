@@ -12,13 +12,14 @@ import time
 import json
 from dotenv import load_dotenv
 import traceback
+import re
 
 load_dotenv()
 
 ISHTARI_TOKEN = os.getenv("ISHTARI_TOKEN")
 
 
-def _fetch_products(search_keyword, product_order_id):
+def _fetch_products(search_keyword, product_order_id, cookie=None):
     """Function that fetches products from ishtari.com. Due to how the website works (not sure why), not all first
     requests return product data (they would return that we already have the data cached). In which case,
     we do another request taking the type_id from the first response and add it as a query parameter
@@ -30,25 +31,60 @@ def _fetch_products(search_keyword, product_order_id):
     # First request to get the redirect/cache info
     initial_url = f"https://www.ishtari.com/motor/v2/index.php?route=catalog/search&key={search_keyword}&limit={NUMBER_OF_PRODUCTS_TO_FETCH}&page=0"
 
-    headers = {
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Authorization": f"Bearer {ISHTARI_TOKEN}",
-        # "Authorization": f"Bearer d75ce26facce58a67378e89a23910a8e7ff940ea",  # Ishtari token seem to expire every 12 hours or so
-        "Cache-Control": "no-cache",
-        "Pragma": "no-cache",
-        "Cookie": f"__Host-next-auth.csrf-token=e6578cc1add6b9bd1a3b91e27576b9ae416c83a807ec23be8222e5e56fb4dec8%7Ca4c2c4d8eb05d7be1b34092b60b1bc9d016b7fd249c3b5e21536c044520f0f2a; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token={ISHTARI_TOKEN}",
-        # "Cookie": f"__Host-next-auth.csrf-token=231d03e9664f7b45242fe3cdd6ecb98a81af5f0d47315f4c864237bbdd9765fa%7C018ab6b3595fbd6385e4d2ddd1962345f55d1ec219558a6f2a2dcb3cc45c3d1d; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token=d75ce26facce58a67378e89a23910a8e7ff940ea; _gcl_au=1.1.405635998.1731360359",
-        "Referer": f"https://www.ishtari.com/search?keyword={search_keyword}",
-        "Sec-Ch-Ua": '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": '"Linux"',
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-origin",
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-    }
+    if not cookie:
+        headers = {
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Language": "en-US,en;q=0.9",
+            # "Authorization": f"Bearer {ISHTARI_TOKEN}",
+            "Authorization": f"Bearer d75ce26facce58a67378e89a23910a8e7ff940ea",  # Ishtari token seem to expire every 12 hours or so
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
+            "Cookie": f"__Host-next-auth.csrf-token=e6578cc1add6b9bd1a3b91e27576b9ae416c83a807ec23be8222e5e56fb4dec8%7Ca4c2c4d8eb05d7be1b34092b60b1bc9d016b7fd249c3b5e21536c044520f0f2a; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token={ISHTARI_TOKEN}",
+            # "Cookie": f"__Host-next-auth.csrf-token=231d03e9664f7b45242fe3cdd6ecb98a81af5f0d47315f4c864237bbdd9765fa%7C018ab6b3595fbd6385e4d2ddd1962345f55d1ec219558a6f2a2dcb3cc45c3d1d; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token=d75ce26facce58a67378e89a23910a8e7ff940ea; _gcl_au=1.1.405635998.1731360359",
+            "Referer": f"https://www.ishtari.com/search?keyword={search_keyword}",
+            "Sec-Ch-Ua": '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Sec-Ch-Ua-Platform": '"Linux"',
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin",
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+        }
+    else:
+        # extracting the api_token parameter from the cookie
+        pattern = r"api-token=([^;]+)"
+        match = re.search(pattern, cookie)
+
+        if match:
+            api_token = match.group(1)
+            logger.info(
+                f"This is the api_token extracted from the Ishtari cookie: {api_token}"
+            )
+        else:
+            logger.info("api-token not found in the Ishtari cookie")
+        headers = {
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Authorization": f"Bearer {api_token}",
+            # "Authorization": f"Bearer {ISHTARI_TOKEN}",
+            # "Authorization": f"Bearer d75ce26facce58a67378e89a23910a8e7ff940ea",  # Ishtari token seem to expire every 12 hours or so
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
+            # "__Host-next-auth.csrf-token=e00e7b8f5028d24bb0c340995801f6f6ffebc08dd26b6f8a18dbeda759e17baf%7Cb0fef8c221266dea234000bfd90b96922e8b9aa9b9b04ccca58cb897b093c176; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token=d82c10592f7a745b5fe794b6ec1874bdba0b6d2c; _gcl_au=1.1.1312352802.1731579873"
+            "Cookie": cookie,
+            # "Cookie": f"__Host-next-auth.csrf-token=e6578cc1add6b9bd1a3b91e27576b9ae416c83a807ec23be8222e5e56fb4dec8%7Ca4c2c4d8eb05d7be1b34092b60b1bc9d016b7fd249c3b5e21536c044520f0f2a; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token={ISHTARI_TOKEN}",
+            # "Cookie": f"__Host-next-auth.csrf-token=231d03e9664f7b45242fe3cdd6ecb98a81af5f0d47315f4c864237bbdd9765fa%7C018ab6b3595fbd6385e4d2ddd1962345f55d1ec219558a6f2a2dcb3cc45c3d1d; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token=d75ce26facce58a67378e89a23910a8e7ff940ea; _gcl_au=1.1.405635998.1731360359",
+            "Referer": f"https://www.ishtari.com/search?keyword={search_keyword}",
+            "Sec-Ch-Ua": '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Sec-Ch-Ua-Platform": '"Linux"',
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin",
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+        }
     try:
         # using a session maintains cookies across different requests
         session = requests.Session()
@@ -87,7 +123,7 @@ def _fetch_products(search_keyword, product_order_id):
 
             # Making the second request
             response = session.get(product_url, headers=headers)
-            response.raise_for_status()
+            # response.raise_for_status()
             logger.info("This is the response: {response.text}")
             try:
                 product_data = response.json()
@@ -158,12 +194,14 @@ def _process_product_data(product_data):
     return output_products
 
 
-def fetch_ishtari_product_recommendations(search_keyword, product_order_id):
-    return _process_product_data(_fetch_products(search_keyword, product_order_id))
+def fetch_ishtari_product_recommendations(search_keyword, product_order_id, cookie):
+    return _process_product_data(
+        _fetch_products(search_keyword, product_order_id, cookie)
+    )
 
 
 if __name__ == "__main__":
-    print(fetch_ishtari_product_recommendations("white shoes", 1))
+    print(fetch_ishtari_product_recommendations("white shoes", 1, None))
 
 # Usage example
 # try:
