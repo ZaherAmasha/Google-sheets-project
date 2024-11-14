@@ -6,21 +6,19 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from models.products import OutputFetchedProducts
 from utils.logger import logger
+from utils.api_utils import ISHTARI_COOKIE
+from utils.using_playwright import get_ishtari_cookie_using_playwright
 
 import requests
 import time
 import json
-from dotenv import load_dotenv
 import traceback
 import re
 import gzip
-
-load_dotenv()
-
-ISHTARI_TOKEN = os.getenv("ISHTARI_TOKEN")
+import asyncio
 
 
-def _fetch_products(search_keyword, product_order_id, cookie=None):
+def _fetch_products(search_keyword, product_order_id):
     """Function that fetches products from ishtari.com. Due to how the website works (not sure why), not all first
     requests return product data (they would return that we already have the data cached). In which case,
     we do another request taking the type_id from the first response and add it as a query parameter
@@ -32,78 +30,54 @@ def _fetch_products(search_keyword, product_order_id, cookie=None):
     # First request to get the redirect/cache info
     initial_url = f"https://www.ishtari.com/motor/v2/index.php?route=catalog/search&key={search_keyword}&limit={NUMBER_OF_PRODUCTS_TO_FETCH}&page=0"
 
-    if not cookie:
-        headers = {
-            "Accept": "application/json, text/plain, */*",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Accept-Language": "en-US,en;q=0.9",
-            # "Authorization": f"Bearer {ISHTARI_TOKEN}",
-            "Authorization": f"Bearer d75ce26facce58a67378e89a23910a8e7ff940ea",  # Ishtari token seem to expire every 12 hours or so
-            "Cache-Control": "no-cache",
-            "Pragma": "no-cache",
-            "Cookie": f"__Host-next-auth.csrf-token=e6578cc1add6b9bd1a3b91e27576b9ae416c83a807ec23be8222e5e56fb4dec8%7Ca4c2c4d8eb05d7be1b34092b60b1bc9d016b7fd249c3b5e21536c044520f0f2a; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token={ISHTARI_TOKEN}",
-            # "Cookie": f"__Host-next-auth.csrf-token=231d03e9664f7b45242fe3cdd6ecb98a81af5f0d47315f4c864237bbdd9765fa%7C018ab6b3595fbd6385e4d2ddd1962345f55d1ec219558a6f2a2dcb3cc45c3d1d; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token=d75ce26facce58a67378e89a23910a8e7ff940ea; _gcl_au=1.1.405635998.1731360359",
-            "Referer": f"https://www.ishtari.com/search?keyword={search_keyword}",
-            "Sec-Ch-Ua": '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
-            "Sec-Ch-Ua-Mobile": "?0",
-            "Sec-Ch-Ua-Platform": '"Linux"',
-            "Sec-Fetch-Dest": "empty",
-            "Sec-Fetch-Mode": "cors",
-            "Sec-Fetch-Site": "same-origin",
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-        }
-    else:
-        # extracting the api_token parameter from the cookie
-        pattern = r"api-token=([^;]+)"
-        match = re.search(pattern, cookie)
+    # setting the cookie wrong to test the functionality:
+    # ISHTARI_COOKIE.cookie = "__Host-next-auth.csrf-token=231d03e9664f7b45242fe3cdd6ecb98a81af5f0d47315f4c864237bbdd9765fa%7C018ab6b3595fbd6385e4d2ddd1962345f55d1ec219558a6f2a2dcb3cc45c3d1d; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token=d75ce26facce58a67378e89a23910a8e7ff940ea; _gcl_au=1.1.405635998.1731360359"
 
-        if match:
-            api_token = match.group(1)
-            logger.info(
-                f"This is the api_token extracted from the Ishtari cookie: {api_token}"
-            )
-        else:
-            logger.info("api-token not found in the Ishtari cookie")
-        headers = {
-            "Accept": "application/json, text/plain, */*",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Authorization": f"Bearer {api_token}",
-            # "Authorization": f"Bearer {ISHTARI_TOKEN}",
-            # "Authorization": f"Bearer d75ce26facce58a67378e89a23910a8e7ff940ea",  # Ishtari token seem to expire every 12 hours or so
-            "Cache-Control": "no-cache",
-            "Pragma": "no-cache",
-            # "__Host-next-auth.csrf-token=e00e7b8f5028d24bb0c340995801f6f6ffebc08dd26b6f8a18dbeda759e17baf%7Cb0fef8c221266dea234000bfd90b96922e8b9aa9b9b04ccca58cb897b093c176; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token=d82c10592f7a745b5fe794b6ec1874bdba0b6d2c; _gcl_au=1.1.1312352802.1731579873"
-            "Cookie": cookie,
-            # "Cookie": f"__Host-next-auth.csrf-token=e6578cc1add6b9bd1a3b91e27576b9ae416c83a807ec23be8222e5e56fb4dec8%7Ca4c2c4d8eb05d7be1b34092b60b1bc9d016b7fd249c3b5e21536c044520f0f2a; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token={ISHTARI_TOKEN}",
-            # "Cookie": f"__Host-next-auth.csrf-token=231d03e9664f7b45242fe3cdd6ecb98a81af5f0d47315f4c864237bbdd9765fa%7C018ab6b3595fbd6385e4d2ddd1962345f55d1ec219558a6f2a2dcb3cc45c3d1d; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token=d75ce26facce58a67378e89a23910a8e7ff940ea; _gcl_au=1.1.405635998.1731360359",
-            "Referer": f"https://www.ishtari.com/search?keyword={search_keyword}",
-            "Sec-Ch-Ua": '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
-            "Sec-Ch-Ua-Mobile": "?0",
-            "Sec-Ch-Ua-Platform": '"Linux"',
-            "Sec-Fetch-Dest": "empty",
-            "Sec-Fetch-Mode": "cors",
-            "Sec-Fetch-Site": "same-origin",
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-        }
+    if (
+        ISHTARI_COOKIE.cookie == None
+    ):  # Ishtari cookie has not been set yet, this statement is only entered at the first use of this fetch function
+        # fetch a new Ishtari cookie
+        ISHTARI_COOKIE.cookie = asyncio.run(get_ishtari_cookie_using_playwright())
+    else:
+        logger.info("Ishtari cookie is present, no need to fetch a new one")
+
+    headers = {
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Authorization": f"Bearer {ISHTARI_COOKIE.get_api_token()}",
+        # "Authorization": f"Bearer d75ce26facce58a67378e89a23910a8e7ff940eB",  # Ishtari token seem to expire every 12 hours or so
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+        "Cookie": ISHTARI_COOKIE.cookie,
+        # "Cookie": f"__Host-next-auth.csrf-token=e6578cc1add6b9bd1a3b91e27576b9ae416c83a807ec23be8222e5e56fb4dec8%7Ca4c2c4d8eb05d7be1b34092b60b1bc9d016b7fd249c3b5e21536c044520f0f2a; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token={ISHTARI_TOKEN}",
+        # "Cookie": f"__Host-next-auth.csrf-token=231d03e9664f7b45242fe3cdd6ecb98a81af5f0d47315f4c864237bbdd9765fa%7C018ab6b3595fbd6385e4d2ddd1962345f55d1ec219558a6f2a2dcb3cc45c3d1d; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token=d75ce26facce58a67378e89a23910a8e7ff940ea; _gcl_au=1.1.405635998.1731360359",
+        "Referer": f"https://www.ishtari.com/search?keyword={search_keyword}",
+        "Sec-Ch-Ua": '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": '"Linux"',
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+    }
+
     try:
         # using a session maintains cookies across different requests
         session = requests.Session()
         # '__Host-next-auth.csrf-token=53733336ab32d9c486bb724fe1c24f0f8661ffe4788fadd9bd6eb8c85031bb0c%7Cae36fcd84a54abe446877e567381a9f9f4abe2981cf906f8e10d3b3259bbf97b; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com'
         # First request to get redirect info
         response = session.get(initial_url, headers=headers)
-        # logger.info(f"These are the response headers: {response.headers}")
-        # Check if response is compressed
-        # if response.headers.get("content-encoding") == "gzip":
-        #     try:
-        #         # Manually decompress gzip content
-        #         logger.info(f"Trying to decompress the response content")
-        #         decompressed_content = gzip.decompress(response.content)
-        #         logger.info(f"Successfully decompressed gzip content")
-        #         response._content = decompressed_content
-        #     except Exception as e:
-        #         logger.error(f"Failed to decompress content: {e}")
-        #         return None
+
+        # Check for expired cookie, in which case the response would be that the api request is unauthorized
+        if response.status_code == 401:
+            logger.info("Cookie expired, fetching a new one.")
+            ISHTARI_COOKIE.cookie = asyncio.run(get_ishtari_cookie_using_playwright())
+            headers["Cookie"] = ISHTARI_COOKIE.cookie  # Update with new cookie
+            headers["Authorization"] = f"Bearer {ISHTARI_COOKIE.get_api_token()}"
+
+            # Retry the initial request with a new cookie
+            response = session.get(initial_url, headers=headers)
 
         response.raise_for_status()
         # logger.info(f"This is the initial response: {response.content}")
@@ -216,15 +190,14 @@ def _process_product_data(product_data):
     return output_products
 
 
-def fetch_ishtari_product_recommendations(search_keyword, product_order_id, cookie):
-    return _process_product_data(
-        _fetch_products(search_keyword, product_order_id, cookie)
-    )
+def fetch_ishtari_product_recommendations(search_keyword, product_order_id):
+    return _process_product_data(_fetch_products(search_keyword, product_order_id))
 
 
 if __name__ == "__main__":
-    print(fetch_ishtari_product_recommendations("black shoes", 1, None))
-
+    print(fetch_ishtari_product_recommendations("black shoes", 1))
+    # time.sleep(2)
+    # print(fetch_ishtari_product_recommendations("black shoes", 1))
 # Usage example
 # try:
 #     product_data = fetch_ishtari_product_recommendations(

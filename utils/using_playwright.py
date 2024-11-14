@@ -98,13 +98,15 @@ async def get_ishtari_cookie_using_playwright():
         # Close the browser
         await browser.close()
 
-        print("Process finished")
+        logger.info("Process finished")
         # same process as the AliExpress cookie
         cookie = ""
         for item in cookie_for_requests:
             cookie = cookie + f"{item['name']}={item['value']}; "
         cookie = cookie.strip()[:-1]
-        print(f"Getting the AliExpress using Playwright took: {time()-start_time}")
+        logger.info(
+            f"Getting the Ishtari cookie using Playwright took: {time()-start_time}"
+        )
         return cookie
 
 
