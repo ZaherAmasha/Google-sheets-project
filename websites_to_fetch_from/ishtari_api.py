@@ -56,7 +56,7 @@ def _fetch_products(search_keyword, product_order_id):
         # First request to get redirect info
         response = session.get(initial_url, headers=headers)
         response.raise_for_status()
-        logger.info(f"This is the initial response: {response}")
+        logger.info(f"This is the initial response: {response.text}")
         initial_data = response.json()
         logger.info(f"This is the initial data: {initial_data}")
         # print("This is the initial data: ")
