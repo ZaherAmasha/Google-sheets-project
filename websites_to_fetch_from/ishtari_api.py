@@ -92,21 +92,21 @@ def _fetch_products(search_keyword, product_order_id, cookie=None):
         # '__Host-next-auth.csrf-token=53733336ab32d9c486bb724fe1c24f0f8661ffe4788fadd9bd6eb8c85031bb0c%7Cae36fcd84a54abe446877e567381a9f9f4abe2981cf906f8e10d3b3259bbf97b; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com'
         # First request to get redirect info
         response = session.get(initial_url, headers=headers)
-        logger.info(f"These are the response headers: {response.headers}")
+        # logger.info(f"These are the response headers: {response.headers}")
         # Check if response is compressed
-        if response.headers.get("content-encoding") == "gzip":
-            try:
-                # Manually decompress gzip content
-                logger.info(f"Trying to decompress the response content")
-                decompressed_content = gzip.decompress(response.content)
-                logger.info(f"Successfully decompressed gzip content")
-                response._content = decompressed_content
-            except Exception as e:
-                logger.error(f"Failed to decompress content: {e}")
-                return None
+        # if response.headers.get("content-encoding") == "gzip":
+        #     try:
+        #         # Manually decompress gzip content
+        #         logger.info(f"Trying to decompress the response content")
+        #         decompressed_content = gzip.decompress(response.content)
+        #         logger.info(f"Successfully decompressed gzip content")
+        #         response._content = decompressed_content
+        #     except Exception as e:
+        #         logger.error(f"Failed to decompress content: {e}")
+        #         return None
 
         response.raise_for_status()
-        logger.info(f"This is the initial response: {response.content}")
+        # logger.info(f"This is the initial response: {response.content}")
         initial_data = response.json()
         logger.info(f"This is the initial data: {initial_data}")
         # print("This is the initial data: ")
@@ -114,8 +114,8 @@ def _fetch_products(search_keyword, product_order_id, cookie=None):
             raise Exception(f"Initial request failed: {response.text}")
         # with open("ishtari_response.txt", "w") as output:
         #     output.write(str(response.json()).replace("'", '"'))
+
         # If we got a redirect, make the second request
-        # initial_data["data"]["redirect"] = 1
         if initial_data["data"].get("redirect") == "1":
             logger.info("trying the fetch again")
             # a failed first request looks like: {"success":true,"data":{"redirect":"1","type":"category","type_id":"4006","is_cache":true}}
@@ -140,6 +140,13 @@ def _fetch_products(search_keyword, product_order_id, cookie=None):
             response = session.get(product_url, headers=headers)
             # response.raise_for_status()
             logger.info(f"This is the response: {response.text}")
+            logger.info(
+                f"This is the products list: {response.json().get('data', {}).get('products', [])}"
+            )
+            # if there are no products to show at the page, raise an exception so that the except block would catch it and return no products found
+            if len(response.json().get("data", {}).get("products", [])) == 0:
+                raise Exception("No products found in the response")
+
             try:
                 product_data = response.json()
                 return product_data
