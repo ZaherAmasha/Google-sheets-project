@@ -36,4 +36,11 @@ class IshtariCookie:
             return None
 
 
+class AliexpressCookie:
+    def __init__(self, cookie):
+        self.cookie = cookie
+
+
+# Setting the cookies to be none at the start of the server
+ALIEXPRESS_COOKIE = AliexpressCookie(cookie=None)
 ISHTARI_COOKIE = IshtariCookie(cookie=None)
