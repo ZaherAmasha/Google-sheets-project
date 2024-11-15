@@ -16,8 +16,6 @@ from websites_to_fetch_from.aliexpress_api import (
     fetch_aliexpress_product_recommendations,
 )
 from websites_to_fetch_from.ishtari_api import fetch_ishtari_product_recommendations
-
-# from websites_to_fetch_from.ishtari_api import
 from models.fastapi_endpoints import SheetUpdate
 from utils.utils import remove_elements_with_whitespaces_and_empty_from_list
 from utils.api_utils import (
@@ -31,7 +29,6 @@ from utils.sheet_utils import (
     update_spreadsheet_with_fetched_products,
 )
 from utils.logger import logger
-
 from utils.using_playwright import (
     get_aliexpress_cookie_using_playwright,
     get_ishtari_cookie_using_playwright,
@@ -41,7 +38,9 @@ load_dotenv()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(
+    app: FastAPI,
+):  # we can also do things with app here like initializing a database connection for example
     try:
         # on startup:
         # We fetch the cookies and load them in memory on server startup so that we don't have to fetch
@@ -93,13 +92,6 @@ async def fetch_products_async(task_id: str, keywords: list):
         if not signal_start_of_product_retrieval():
             return False
 
-        # get the aliexpress cookie before the generation
-        # aliexpress_cookie = await get_aliexpress_cookie_using_playwright()
-        # logger.info(f"Got the AliExpress cookie using Playwright: {aliexpress_cookie}")
-
-        # ishtari_cookie = await get_ishtari_cookie_using_playwright()
-        # logger.info(f"Got the Ishtari cookie using Playwright: {ishtari_cookie}")
-
         for product_order_id, keyword in enumerate(keywords):
             # Check if cancellation was requested
             if cancel_flags[task_id]:
@@ -107,12 +99,10 @@ async def fetch_products_async(task_id: str, keywords: list):
                 return False
             logger.info(f"This is the product ID: {product_order_id+1}")
             ali_express_fetched_products = (
-                await fetch_aliexpress_product_recommendations(
-                    keyword, product_order_id + 1
-                )
+                await fetch_aliexpress_product_recommendations(keyword)
             )
             ishtari_fetched_products = await fetch_ishtari_product_recommendations(
-                keyword, product_order_id + 1
+                keyword
             )
             update_spreadsheet_with_fetched_products(
                 ali_express_fetched_products.concatenate(ishtari_fetched_products),

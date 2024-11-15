@@ -13,8 +13,6 @@ import requests
 import time
 import json
 import traceback
-import re
-import gzip
 import asyncio
 
 
@@ -23,7 +21,7 @@ async def get_ishtari_cookie_using_playwright_async_wrapper():
     return cookie
 
 
-async def _fetch_products(search_keyword, product_order_id):
+async def _fetch_products(search_keyword):
     """Function that fetches products from ishtari.com. Due to how the website works (not sure why), not all first
     requests return product data (they would return that we already have the data cached). In which case,
     we do another request taking the type_id from the first response and add it as a query parameter
@@ -35,18 +33,11 @@ async def _fetch_products(search_keyword, product_order_id):
     # First request to get the redirect/cache info
     initial_url = f"https://www.ishtari.com/motor/v2/index.php?route=catalog/search&key={search_keyword}&limit={NUMBER_OF_PRODUCTS_TO_FETCH}&page=0"
 
-    # setting the cookie wrong to test the functionality:
-    # ISHTARI_COOKIE.cookie = "__Host-next-auth.csrf-token=231d03e9664f7b45242fe3cdd6ecb98a81af5f0d47315f4c864237bbdd9765fa%7C018ab6b3595fbd6385e4d2ddd1962345f55d1ec219558a6f2a2dcb3cc45c3d1d; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token=d75ce26facce58a67378e89a23910a8e7ff940ea; _gcl_au=1.1.405635998.1731360359"
-
     if (
         ISHTARI_COOKIE.cookie is None
     ):  # Ishtari cookie has not been set yet, this statement is only entered at the first use of this fetch function
         # fetch a new Ishtari cookie
-        ISHTARI_COOKIE.cookie = (
-            await get_ishtari_cookie_using_playwright()
-        )  # asyncio.run(
-        #     get_ishtari_cookie_using_playwright_async_wrapper()
-        # )
+        ISHTARI_COOKIE.cookie = await get_ishtari_cookie_using_playwright()
     else:
         logger.info("Ishtari cookie is present, no need to fetch a new one")
 
@@ -55,12 +46,9 @@ async def _fetch_products(search_keyword, product_order_id):
         "Accept-Encoding": "gzip, deflate, br",
         "Accept-Language": "en-US,en;q=0.9",
         "Authorization": f"Bearer {ISHTARI_COOKIE.get_api_token()}",
-        # "Authorization": f"Bearer d75ce26facce58a67378e89a23910a8e7ff940eB",  # Ishtari token seem to expire every 12 hours or so
         "Cache-Control": "no-cache",
         "Pragma": "no-cache",
         "Cookie": ISHTARI_COOKIE.cookie,
-        # "Cookie": f"__Host-next-auth.csrf-token=e6578cc1add6b9bd1a3b91e27576b9ae416c83a807ec23be8222e5e56fb4dec8%7Ca4c2c4d8eb05d7be1b34092b60b1bc9d016b7fd249c3b5e21536c044520f0f2a; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token={ISHTARI_TOKEN}",
-        # "Cookie": f"__Host-next-auth.csrf-token=231d03e9664f7b45242fe3cdd6ecb98a81af5f0d47315f4c864237bbdd9765fa%7C018ab6b3595fbd6385e4d2ddd1962345f55d1ec219558a6f2a2dcb3cc45c3d1d; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com; api-token=d75ce26facce58a67378e89a23910a8e7ff940ea; _gcl_au=1.1.405635998.1731360359",
         "Referer": f"https://www.ishtari.com/search?keyword={search_keyword}",
         "Sec-Ch-Ua": '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
         "Sec-Ch-Ua-Mobile": "?0",
@@ -161,9 +149,6 @@ async def _fetch_products(search_keyword, product_order_id):
         }
 
 
-# print(f"Bearer {ISHTARI_TOKEN}")
-
-
 async def _process_product_data(product_data):
     """Process the received product data"""
     # if not product_data.get("success"):
@@ -201,25 +186,11 @@ async def _process_product_data(product_data):
     return output_products
 
 
-async def fetch_ishtari_product_recommendations(search_keyword, product_order_id):
-    return await _process_product_data(
-        await _fetch_products(search_keyword, product_order_id)
-    )
+async def fetch_ishtari_product_recommendations(search_keyword):
+    return await _process_product_data(await _fetch_products(search_keyword))
 
 
 if __name__ == "__main__":
-    print(asyncio.run(fetch_ishtari_product_recommendations("black shoes", 1)))
+    print(asyncio.run(fetch_ishtari_product_recommendations("black shoes")))
     # time.sleep(2)
-    # print(fetch_ishtari_product_recommendations("black shoes", 1))
-# Usage example
-# try:
-#     product_data = fetch_ishtari_product_recommendations(
-#         "white shoes", "1"
-#     )
-#     print("Finished calling the fetch function")
-#     products = process_product_data(product_data)
-#     print(f"Found {len(products.product_names)} products:")
-#     for product in products:
-#         print(f"- {product}")
-# except Exception as e:
-#     print(f"Error: {str(e)}")
+    # print(fetch_ishtari_product_recommendations("black shoes"))
