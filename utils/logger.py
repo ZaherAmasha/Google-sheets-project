@@ -11,7 +11,6 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger()
-# logger = logging.getLogger("product_recommendations_project")
 
 log_level = os.getenv("LOG_LEVEL", "INFO")
 logger.setLevel(log_level.upper())  # overrides the above level setting

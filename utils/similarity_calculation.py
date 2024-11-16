@@ -70,7 +70,7 @@ if __name__ == "__main__":
     # score is also 1.5 because both search keyword words are present at the start of the sequence so they get a (1/(1+pos('black')) +
     # (1/(1+pos('shoes'))) = (1 + 0.5) = 1.5). I didn't want to include a check if the product title is the same as the search keyword
     # and then assign a %100 similarity to it because this would not consider the rest of the probable product titles. So to normalize the
-    # entire range, I'm diving the final score by 1.5, then clipping values that are more than 1 to 1. This is not ideal but it gives a good
+    # entire range, I'm dividing the final score by 1.5, then clipping values that are more than 1 to 1. This is not ideal but it gives a good
     # enough estimate of the similarity.
     keyword = "black shoes"
     products = [

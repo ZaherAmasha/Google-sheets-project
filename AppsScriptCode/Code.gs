@@ -5,7 +5,7 @@
 // endpoint is called.
 
 
-function onButtonPress() {
+function OnButtonPress() {
   var spread_sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("User Input")
   var secret = PropertiesService.getScriptProperties().getProperty("shared_secret");
   Logger.log("Fetching the status of the running tasks from the python server")
@@ -75,7 +75,7 @@ function onButtonPress() {
 // Button to cancel the product retrieval, we send a post request to the python server to stop
 function OnCancelRetrieval() {
   // Trigger the fetch webhook
-  var url = "https://google-sheets-project.onrender.com/cancel_product_fetch";
+  var url = "https://google-sheets-project-1.onrender.com/cancel_product_fetch";
   var secret = PropertiesService.getScriptProperties().getProperty("shared_secret");
   var options = {
       method: "post",
@@ -146,7 +146,7 @@ function _fetchYTVidoesForMultipleKeywords(keywords) {
 
   // Get the spreadsheet and sheets
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet3 = ss.getSheetByName('Sheet3');
+  const sheet3 = ss.getSheetByName('YouTube Videos');
 
   // Clear existing content except headers
   const lastRow = sheet3.getLastRow();

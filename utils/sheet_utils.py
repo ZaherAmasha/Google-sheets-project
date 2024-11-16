@@ -32,7 +32,7 @@ def update_spreadsheet_with_fetched_products(
     try:
         workbook = _get_google_sheet_workbook()
         sheet1 = workbook.worksheet("User Input")
-        sheet2 = workbook.worksheet("Sheet2")
+        sheet2 = workbook.worksheet("Product Recommendations")
 
         keyword_sim = analyze_product_similarities(
             keyword, input_product_data.product_names
@@ -123,46 +123,9 @@ def update_spreadsheet_with_fetched_products(
             },
         ]
         sheet2.batch_format(formats=formats)
-        # sheet2.format(
-        #     f"A{start_row}:E{end_row}",
-        #     format={
-        #         "textFormat": {"bold": False},
-        #         "backgroundColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
-        #     },
-        # )  # unsetting the formatting for the product rows
-
-        # keyword_name_range = f"A{start_row}:E{start_row}"
-        # white_smoke_rgb = (
-        #     230 / 255
-        # )  # normalizing the rgb values of white smoke to between 0 and 1 because that's how the format method accepts them
-        # sheet2.format(
-        #     keyword_name_range,
-        #     format={
-        #         "backgroundColor": {
-        #             "green": white_smoke_rgb,
-        #             "red": white_smoke_rgb,
-        #             "blue": white_smoke_rgb,
-        #         },
-        #         "horizontalAlignment": "CENTER",
-        #         "textFormat": {"bold": True},
-        #     },
-        # )
-
-        sheet2.merge_cells(name=keyword_name_range, merge_type="merge_rows")
-
-        # # Apply hyperlink formatting to URL column (column C)
-        # url_range = f"C{start_row + 1}:C{end_row}"  # Skip the keyword row
-        # sheet2.format(
-        #     url_range,
-        #     format={
-        #         "textFormat": {"bold": False},
-        #         "backgroundColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
-        #         "hyperlinkDisplayType": "LINKED",
-        #     },
-        # )
-        # start_loop = start_row + 1
-        # new_hyperlinked_urls = [[f'=HYPERLINK("{url}", "{url}")'] for row in range(start_loop, start_loop + len(transposed_values[1:])) if row[2]]
-        # sheet2.update(f"C")
+        sheet2.merge_cells(
+            name=keyword_name_range, merge_type="merge_rows"
+        )  # to give the keyword name rows a better look
 
         # Update the URLs with hyperlink formulas
         hyperlinked_updates = []
@@ -170,13 +133,13 @@ def update_spreadsheet_with_fetched_products(
             transposed_values[1:], start=start_row + 1
         ):  # Skip header row
             if row[2]:  # Check if URL exists in column C (index 2)
-                # cell = f"C{idx}"
                 url = row[2]
                 hyperlinked_updates.append([f'=HYPERLINK("{url}", "{url}")'])
 
         update_range = f"C{start_row + 1}:C{start_row + len(hyperlinked_updates)}"
         sheet2.update(update_range, hyperlinked_updates, raw=False)
 
+        # Updating the status cell for this particular keyword in sheet 1
         sheet1.update_acell(f"B{product_order_id+1}", "Fetched Products Successfully")
         sheet1.format(
             f"B{product_order_id+1}", format={"backgroundColor": {"green": 1.0}}
