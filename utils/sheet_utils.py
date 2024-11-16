@@ -78,52 +78,104 @@ def update_spreadsheet_with_fetched_products(
             range_name=f"A{start_row}:E{end_row}",
             values=transposed_values,
         )
-        sheet2.format(
-            f"A{start_row}:E{end_row}",
-            format={
-                "textFormat": {"bold": False},
-                "backgroundColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
-            },
-        )  # unsetting the formatting for the product rows
 
-        keyword_name_range = f"A{start_row}:E{start_row}"
+        # batching the format operations to save api calls and time
         white_smoke_rgb = (
             230 / 255
         )  # normalizing the rgb values of white smoke to between 0 and 1 because that's how the format method accepts them
-        sheet2.format(
-            keyword_name_range,
-            format={
-                "backgroundColor": {
-                    "green": white_smoke_rgb,
-                    "red": white_smoke_rgb,
-                    "blue": white_smoke_rgb,
+        products_range = f"A{start_row}:E{end_row}"
+        keyword_name_range = f"A{start_row}:E{start_row}"
+        url_range = f"C{start_row + 1}:C{end_row}"  # Skip the keyword row
+
+        formats = [
+            {
+                "range": products_range,
+                "format": {
+                    "textFormat": {
+                        "bold": False,
+                    },
+                    "backgroundColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
                 },
-                "horizontalAlignment": "CENTER",
-                "textFormat": {"bold": True},
             },
-        )
+            {
+                "range": keyword_name_range,
+                "format": {
+                    "backgroundColor": {
+                        "green": white_smoke_rgb,
+                        "red": white_smoke_rgb,
+                        "blue": white_smoke_rgb,
+                    },
+                    "horizontalAlignment": "CENTER",
+                    "textFormat": {"bold": True},
+                },
+            },
+            {
+                "range": url_range,
+                "format": {
+                    "backgroundColor": {
+                        "green": 1.0,
+                        "red": 1.0,
+                        "blue": 1.0,
+                    },
+                    "hyperlinkDisplayType": "LINKED",
+                    "textFormat": {"bold": False},
+                },
+            },
+        ]
+        sheet2.batch_format(formats=formats)
+        # sheet2.format(
+        #     f"A{start_row}:E{end_row}",
+        #     format={
+        #         "textFormat": {"bold": False},
+        #         "backgroundColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
+        #     },
+        # )  # unsetting the formatting for the product rows
+
+        # keyword_name_range = f"A{start_row}:E{start_row}"
+        # white_smoke_rgb = (
+        #     230 / 255
+        # )  # normalizing the rgb values of white smoke to between 0 and 1 because that's how the format method accepts them
+        # sheet2.format(
+        #     keyword_name_range,
+        #     format={
+        #         "backgroundColor": {
+        #             "green": white_smoke_rgb,
+        #             "red": white_smoke_rgb,
+        #             "blue": white_smoke_rgb,
+        #         },
+        #         "horizontalAlignment": "CENTER",
+        #         "textFormat": {"bold": True},
+        #     },
+        # )
 
         sheet2.merge_cells(name=keyword_name_range, merge_type="merge_rows")
 
-        # Apply hyperlink formatting to URL column (column C)
-        url_range = f"C{start_row + 1}:C{end_row}"  # Skip the keyword row
-        sheet2.format(
-            url_range,
-            format={
-                "textFormat": {"bold": False},
-                "backgroundColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
-                "hyperlinkDisplayType": "LINKED",
-            },
-        )
+        # # Apply hyperlink formatting to URL column (column C)
+        # url_range = f"C{start_row + 1}:C{end_row}"  # Skip the keyword row
+        # sheet2.format(
+        #     url_range,
+        #     format={
+        #         "textFormat": {"bold": False},
+        #         "backgroundColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
+        #         "hyperlinkDisplayType": "LINKED",
+        #     },
+        # )
+        # start_loop = start_row + 1
+        # new_hyperlinked_urls = [[f'=HYPERLINK("{url}", "{url}")'] for row in range(start_loop, start_loop + len(transposed_values[1:])) if row[2]]
+        # sheet2.update(f"C")
 
         # Update the URLs with hyperlink formulas
-        for idx, row in enumerate(
+        hyperlinked_updates = []
+        for _, row in enumerate(
             transposed_values[1:], start=start_row + 1
         ):  # Skip header row
             if row[2]:  # Check if URL exists in column C (index 2)
-                cell = f"C{idx}"
+                # cell = f"C{idx}"
                 url = row[2]
-                sheet2.update_acell(cell, f'=HYPERLINK("{url}", "{url}")')
+                hyperlinked_updates.append([f'=HYPERLINK("{url}", "{url}")'])
+
+        update_range = f"C{start_row + 1}:C{start_row + len(hyperlinked_updates)}"
+        sheet2.update(update_range, hyperlinked_updates, raw=False)
 
         sheet1.update_acell(f"B{product_order_id+1}", "Fetched Products Successfully")
         sheet1.format(
