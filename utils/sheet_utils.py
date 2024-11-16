@@ -48,11 +48,6 @@ def update_spreadsheet_with_fetched_products(
         ]
         transposed_values = list(zip(*values))
         # print("Transposed values: ", transposed_values)
-        # to add an empty row between products for different keywords
-        if product_order_id > 1:
-            add_line_between = 1
-        else:
-            add_line_between = 0
 
         # getting the number of rows in sheet2 so far
         current_number_of_rows = len(sheet2.col_values(1))
@@ -73,11 +68,62 @@ def update_spreadsheet_with_fetched_products(
         if required_rows > sheet2.row_count:
             sheet2.add_rows(required_rows - sheet2.row_count)  # Add missing rows
 
-        # From A to D because we have 4 columns to fill with values
+        # to add an empty row between products for different keywords
+        add_line_between = 1 if product_order_id > 1 else 0
+        start_row = current_number_of_rows + 1 + add_line_between
+        end_row = len(transposed_values) + 1 + current_number_of_rows + add_line_between
+
+        # From A to E because we have 5 columns to fill with values
         sheet2.update(
-            range_name=f"A{current_number_of_rows+1+add_line_between}:E{len(transposed_values)+1+current_number_of_rows+add_line_between}",
+            range_name=f"A{start_row}:E{end_row}",
             values=transposed_values,
         )
+        sheet2.format(
+            f"A{start_row}:E{end_row}",
+            format={
+                "textFormat": {"bold": False},
+                "backgroundColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
+            },
+        )  # unsetting the formatting for the product rows
+
+        keyword_name_range = f"A{start_row}:E{start_row}"
+        white_smoke_rgb = (
+            230 / 255
+        )  # normalizing the rgb values of white smoke to between 0 and 1 because that's how the format method accepts them
+        sheet2.format(
+            keyword_name_range,
+            format={
+                "backgroundColor": {
+                    "green": white_smoke_rgb,
+                    "red": white_smoke_rgb,
+                    "blue": white_smoke_rgb,
+                },
+                "horizontalAlignment": "CENTER",
+                "textFormat": {"bold": True},
+            },
+        )
+
+        sheet2.merge_cells(name=keyword_name_range, merge_type="merge_rows")
+
+        # Apply hyperlink formatting to URL column (column C)
+        url_range = f"C{start_row + 1}:C{end_row}"  # Skip the keyword row
+        sheet2.format(
+            url_range,
+            format={
+                "textFormat": {"bold": False},
+                "backgroundColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
+                "hyperlinkDisplayType": "LINKED",
+            },
+        )
+
+        # Update the URLs with hyperlink formulas
+        for idx, row in enumerate(
+            transposed_values[1:], start=start_row + 1
+        ):  # Skip header row
+            if row[2]:  # Check if URL exists in column C (index 2)
+                cell = f"C{idx}"
+                url = row[2]
+                sheet2.update_acell(cell, f'=HYPERLINK("{url}", "{url}")')
 
         sheet1.update_acell(f"B{product_order_id+1}", "Fetched Products Successfully")
         sheet1.format(
@@ -139,7 +185,7 @@ def signal_end_of_product_retrieval():
     try:
         workbook = _get_google_sheet_workbook()
         sheet1 = workbook.worksheet("User Input")
-        sheet1.update_acell("C2", "Retrieved the Products, See Sheet 2")
+        sheet1.update_acell("C2", "Retrieved the Products, See Sheet 2 and Sheet 3")
         return True
     except Exception as e:
         logger.error(
