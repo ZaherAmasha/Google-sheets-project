@@ -5,8 +5,8 @@ from utils.logger import logger
 
 
 def check_shared_secret_validity(authorization, SHARED_SECRET):
-    logger.info(f"This is the authorization header: {authorization}")
-    logger.info(f"And this is the shared secret: {SHARED_SECRET}")
+    logger.debug(f"This is the authorization header: {authorization}")
+    logger.debug(f"And this is the shared secret: {SHARED_SECRET}")
     if authorization != f"Bearer {SHARED_SECRET}":
         logger.exception("Incorrect SHARED_SECRET")
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -17,14 +17,14 @@ class IshtariCookie:
         self.cookie = cookie
 
     def get_api_token(self):
-        # extracting the api_token parameter from the cookie
+        # extracting the api_token parameter from the cookie, it's needed as a seperate auth header
         pattern = r"api-token=([^;]+)"
         if self.cookie:
             match = re.search(pattern, self.cookie)
 
             if match:
                 api_token = match.group(1)
-                logger.info(
+                logger.debug(
                     f"This is the api_token extracted from the Ishtari cookie: {api_token}"
                 )
                 return api_token

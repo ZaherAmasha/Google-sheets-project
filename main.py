@@ -16,6 +16,7 @@ from websites_to_fetch_from.aliexpress_api import (
     fetch_aliexpress_product_recommendations,
 )
 from websites_to_fetch_from.ishtari_api import fetch_ishtari_product_recommendations
+from websites_to_fetch_from.hicart_api import fetch_hicart_product_recommendations
 from models.fastapi_endpoints import SheetUpdate
 from utils.utils import remove_elements_with_whitespaces_and_empty_from_list
 from utils.api_utils import (
@@ -44,7 +45,8 @@ async def lifespan(
     try:
         # on startup:
         # We fetch the cookies and load them in memory on server startup so that we don't have to fetch
-        # them when needed and increase the wait time to get the products for the user
+        # them when needed and increase the wait time to get the products for the user. HiCart doesn't
+        # require a cookie
         logger.info(
             "Server has started successfully, Fetching the AliExpress and Ishtari Cookies"
         )
@@ -104,8 +106,13 @@ async def fetch_products_async(task_id: str, keywords: list):
             ishtari_fetched_products = await fetch_ishtari_product_recommendations(
                 keyword
             )
+            hicart_fetched_products = await fetch_hicart_product_recommendations(
+                keyword
+            )
             update_spreadsheet_with_fetched_products(
-                ali_express_fetched_products.concatenate(ishtari_fetched_products),
+                ali_express_fetched_products.concatenate(
+                    ishtari_fetched_products
+                ).concatenate(hicart_fetched_products),
                 product_order_id + 1,
                 keyword,
             )

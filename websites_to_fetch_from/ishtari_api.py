@@ -62,7 +62,6 @@ async def _fetch_products(search_keyword):
     try:
         # using a session maintains cookies across different requests
         session = requests.Session()
-        # '__Host-next-auth.csrf-token=53733336ab32d9c486bb724fe1c24f0f8661ffe4788fadd9bd6eb8c85031bb0c%7Cae36fcd84a54abe446877e567381a9f9f4abe2981cf906f8e10d3b3259bbf97b; __Secure-next-auth.callback-url=https%3A%2F%2Fwww.ishtari.com'
         # First request to get redirect info
         response = session.get(initial_url, headers=headers)
 
@@ -77,10 +76,9 @@ async def _fetch_products(search_keyword):
             response = session.get(initial_url, headers=headers)
 
         response.raise_for_status()
-        # logger.info(f"This is the initial response: {response.content}")
         initial_data = response.json()
-        logger.info(f"This is the initial data: {initial_data}")
-        # print("This is the initial data: ")
+        logger.debug(f"This is the initial data: {initial_data}")
+
         if not initial_data.get("success"):
             raise Exception(f"Initial request failed: {response.text}")
         # with open("ishtari_response.txt", "w") as output:
@@ -108,12 +106,11 @@ async def _fetch_products(search_keyword):
             time.sleep(2)
 
             # Making the second request
-            # response = session.get(product_url, headers=headers)
             response = requests.get(product_url, headers=headers)
 
             # response.raise_for_status()
-            logger.info(f"This is the response: {response.text}")
-            logger.info(
+            logger.debug(f"This is the response: {response.text}")
+            logger.debug(
                 f"This is the products list: {response.json().get('data', {}).get('products', [])}"
             )
             # if there are no products to show at the page, raise an exception so that the except block would catch it and return no products found
@@ -131,7 +128,6 @@ async def _fetch_products(search_keyword):
             # If no redirect, return the initial data
             return initial_data
     except Exception as e:
-        # logger.info(f"Returning no products from Ishtari: {e}\n{traceback.format_exc()}")
         logger.error(
             f"Returning no products from Ishtari: {e}\n{traceback.format_exc()}"
         )
@@ -151,15 +147,13 @@ async def _fetch_products(search_keyword):
 
 async def _process_product_data(product_data):
     """Process the received product data"""
-    # if not product_data.get("success"):
-    #     raise Exception("Failed to get product data")
-    logger.info(f"This is the product_data: {product_data}")
+
+    logger.debug(f"This is the product_data: {product_data}")
     products = product_data.get("data", {}).get("products", [])
 
     processed_products = []
     for product in products:
         processed_product = {
-            # "id": product.get("product_id"),
             "name": product.get("full_name"),
             "price": "US " + product.get("special"),
             # "url": product.get(
@@ -169,10 +163,10 @@ async def _process_product_data(product_data):
             # example: product_id="112115", name=" Breathable Woven Black Mesh Sneaker ", The product url would be: https://www.ishtari.com/Breathable-Woven-Black-Mesh-Sneaker/p=112115
             "manual_url": f"https://www.ishtari.com/{' '.join(product.get('name')[:-2].split()).replace(' ', '-')}/p={product.get('product_id')}",
         }
-        logger.info(
+        logger.debug(
             f"This is the original name before constructing the URL: {product.get('name')[:-2]}"
         )
-        logger.info(
+        logger.debug(
             f"This is the name after constructing the URL: {product.get('name')[:-2].replace(' ', '-')}"
         )
         processed_products.append(processed_product)
