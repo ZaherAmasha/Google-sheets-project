@@ -191,8 +191,11 @@ function _fetchYTVidoesForMultipleKeywords(keywords) {
 
     // Write data for this keyword group
     const dataRange = sheet3.getRange(currentRow + 2, 1, videoData.length, 8);
-    dataRange.setValues(videoData);
-    
+    dataRange.setValues(videoData)
+      .setBackground('#ffffff') // this is white
+      .setFontWeight('normal')
+      .setHorizontalAlignment('left');
+
     // Format date column
     const dateRange = sheet3.getRange(currentRow + 2, 7, videoData.length, 1);
     dateRange.setNumberFormat('yyyy-mm-dd hh:mm:ss');
