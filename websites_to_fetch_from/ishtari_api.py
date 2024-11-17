@@ -68,7 +68,7 @@ async def _fetch_products(search_keyword):
         # Check for expired cookie, in which case the response would be that the api request is unauthorized
         if response.status_code == 401:
             logger.info("Cookie expired, fetching a new one.")
-            ISHTARI_COOKIE.cookie = asyncio.run(get_ishtari_cookie_using_playwright())
+            ISHTARI_COOKIE.cookie = await get_ishtari_cookie_using_playwright()
             headers["Cookie"] = ISHTARI_COOKIE.cookie  # Update with new cookie
             headers["Authorization"] = f"Bearer {ISHTARI_COOKIE.get_api_token()}"
 
