@@ -2,7 +2,9 @@
 
 A Google Sheets application that fetches product recommendations from e-commerce websites (AliExpress, Ishtari and HiCart) using their internal APIs, and finds relevant YouTube videos. The system uses FastAPI for the backend, Playwright for cookie management, and Google Apps Script for the frontend integration.
 
-[Video Demo Coming Soon]
+## Video Demo
+
+https://github.com/user-attachments/assets/994e5c4d-0a36-4507-b9d4-ae62347ff961
 
 ## Features
 
