@@ -169,7 +169,13 @@ def signal_start_of_product_retrieval():
         current_number_of_rows_sheet1 = len(
             sheet1.col_values(2)
         )  # gets the number of rows in col B
-        print("current number of row col B sheet 1: ", current_number_of_rows_sheet1)
+        # setting this as 1 incase the user deletes the previous status messages, to prevent the code from throwing an empty range error
+        if current_number_of_rows_sheet1 == 0:
+            current_number_of_rows_sheet1 = 1
+
+        logger.debug(
+            f"current number of row col B sheet 1: {current_number_of_rows_sheet1}"
+        )
 
         sheet1.batch_clear([f"B2:B{current_number_of_rows_sheet1}"])
         sheet1.format(
@@ -179,7 +185,7 @@ def signal_start_of_product_retrieval():
             },  # This is white
         )
         num_of_keywords = len(sheet1.col_values(1)) - 1
-        print("number of keywords: ", num_of_keywords)
+        logger.debug(f"number of keywords: {num_of_keywords}")
         sheet1.update(
             f"B2:B{num_of_keywords+1}",
             [["Fetching Product Recommendations"] for _ in range(num_of_keywords)],

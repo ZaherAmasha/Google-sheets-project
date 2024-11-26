@@ -101,10 +101,12 @@ async def fetch_products_async(task_id: str, keywords: list):
                 return False
             logger.info(f"This is the product ID: {product_order_id+1}")
             ali_express_fetched_products = (
-                await fetch_aliexpress_product_recommendations(keyword)
+                await fetch_aliexpress_product_recommendations(
+                    keyword, ALIEXPRESS_COOKIE
+                )
             )
             ishtari_fetched_products = await fetch_ishtari_product_recommendations(
-                keyword
+                keyword, ISHTARI_COOKIE
             )
             hicart_fetched_products = await fetch_hicart_product_recommendations(
                 keyword

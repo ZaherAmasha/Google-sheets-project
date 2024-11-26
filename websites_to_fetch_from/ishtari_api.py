@@ -21,7 +21,7 @@ async def get_ishtari_cookie_using_playwright_async_wrapper():
     return cookie
 
 
-async def _fetch_products(search_keyword):
+async def _fetch_products(search_keyword, Ishtari_Cookie_Object):
     """Function that fetches products from ishtari.com. Due to how the website works (not sure why), not all first
     requests return product data (they would return that we already have the data cached). In which case,
     we do another request taking the type_id from the first response and add it as a query parameter
@@ -34,10 +34,13 @@ async def _fetch_products(search_keyword):
     initial_url = f"https://www.ishtari.com/motor/v2/index.php?route=catalog/search&key={search_keyword}&limit={NUMBER_OF_PRODUCTS_TO_FETCH}&page=0"
 
     if (
-        ISHTARI_COOKIE.cookie is None
+        # ISHTARI_COOKIE.cookie is None
+        Ishtari_Cookie_Object.cookie
+        is None
     ):  # Ishtari cookie has not been set yet, this statement is only entered at the first use of this fetch function
         # fetch a new Ishtari cookie
-        ISHTARI_COOKIE.cookie = await get_ishtari_cookie_using_playwright()
+        # ISHTARI_COOKIE.cookie = await get_ishtari_cookie_using_playwright()
+        Ishtari_Cookie_Object.cookie = await get_ishtari_cookie_using_playwright()
     else:
         logger.info("Ishtari cookie is present, no need to fetch a new one")
 
@@ -45,10 +48,10 @@ async def _fetch_products(search_keyword):
         "Accept": "application/json, text/plain, */*",
         "Accept-Encoding": "gzip, deflate, br",
         "Accept-Language": "en-US,en;q=0.9",
-        "Authorization": f"Bearer {ISHTARI_COOKIE.get_api_token()}",
+        "Authorization": f"Bearer {Ishtari_Cookie_Object.get_api_token()}",
         "Cache-Control": "no-cache",
         "Pragma": "no-cache",
-        "Cookie": ISHTARI_COOKIE.cookie,
+        "Cookie": Ishtari_Cookie_Object.cookie,
         "Referer": f"https://www.ishtari.com/search?keyword={search_keyword}",
         "Sec-Ch-Ua": '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
         "Sec-Ch-Ua-Mobile": "?0",
@@ -68,16 +71,15 @@ async def _fetch_products(search_keyword):
         # Check for expired cookie, in which case the response would be that the api request is unauthorized
         if response.status_code == 401:
             logger.info("Cookie expired, fetching a new one.")
-            ISHTARI_COOKIE.cookie = await get_ishtari_cookie_using_playwright()
-            headers["Cookie"] = ISHTARI_COOKIE.cookie  # Update with new cookie
-            headers["Authorization"] = f"Bearer {ISHTARI_COOKIE.get_api_token()}"
+            Ishtari_Cookie_Object.cookie = await get_ishtari_cookie_using_playwright()
+            headers["Cookie"] = Ishtari_Cookie_Object.cookie  # Update with new cookie
+            headers["Authorization"] = f"Bearer {Ishtari_Cookie_Object.get_api_token()}"
 
             # Retry the initial request with a new cookie
             response = session.get(initial_url, headers=headers)
 
         response.raise_for_status()
         initial_data = response.json()
-        logger.debug(f"This is the initial data: {initial_data}")
 
         if not initial_data.get("success"):
             raise Exception(f"Initial request failed: {response.text}")
@@ -148,7 +150,7 @@ async def _fetch_products(search_keyword):
 async def _process_product_data(product_data):
     """Process the received product data"""
 
-    logger.debug(f"This is the product_data: {product_data}")
+    # logger.debug(f"This is the product_data: {product_data}")
     products = product_data.get("data", {}).get("products", [])
 
     processed_products = []
@@ -180,11 +182,17 @@ async def _process_product_data(product_data):
     return output_products
 
 
-async def fetch_ishtari_product_recommendations(search_keyword):
-    return await _process_product_data(await _fetch_products(search_keyword))
+async def fetch_ishtari_product_recommendations(search_keyword, Ishtari_Cookie_Object):
+    return await _process_product_data(
+        await _fetch_products(search_keyword, Ishtari_Cookie_Object)
+    )
 
 
 if __name__ == "__main__":
-    print(asyncio.run(fetch_ishtari_product_recommendations("black shoes")))
+    print(
+        asyncio.run(
+            fetch_ishtari_product_recommendations("black shoes", ISHTARI_COOKIE)
+        )
+    )
     # time.sleep(2)
     # print(fetch_ishtari_product_recommendations("black shoes"))

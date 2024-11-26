@@ -10,3 +10,12 @@ services:
     volumes:
       #from the root python project locally to the container
       - .:/app
+
+  test:
+    build:
+      context: .
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: ["pytest", "-v", "-s"]
+    # command: ["pytest", "--cov=.", "--cov-report=term-missing"]

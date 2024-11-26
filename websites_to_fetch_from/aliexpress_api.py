@@ -11,21 +11,22 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from utils.logger import logger
 from utils.using_playwright import get_aliexpress_cookie_using_playwright
+
 from utils.api_utils import ALIEXPRESS_COOKIE
 from models.products import OutputFetchedProducts
 
 
 async def fetch_aliexpress_product_recommendations(
-    search_keyword,
+    search_keyword, AliExpress_Cookie_Object
 ) -> OutputFetchedProducts:
 
     url = f"https://www.aliexpress.com/w/wholesale-{search_keyword}.html"  # ?spm=a2g0o.productlist.search.0"
 
     if (
-        ALIEXPRESS_COOKIE.cookie is None
+        AliExpress_Cookie_Object.cookie is None
     ):  # ALiExpress cookie has not been set yet, this statement is only entered at the first use of this fetch function
         # fetch a new AliExpress cookie
-        ALIEXPRESS_COOKIE.cookie = await get_aliexpress_cookie_using_playwright()
+        AliExpress_Cookie_Object.cookie = await get_aliexpress_cookie_using_playwright()
     else:
         logger.info("AliExpress cookie is present, no need to fetch a new one")
 
@@ -34,7 +35,7 @@ async def fetch_aliexpress_product_recommendations(
         "Accept-Encoding": "gzip, deflate, br, zstd",
         "Accept-Language": "en-US,en;q=0.9",
         "Cache-Control": "max-age=0",
-        "Cookie": ALIEXPRESS_COOKIE.cookie,
+        "Cookie": AliExpress_Cookie_Object.cookie,
         "Priority": "u=0, i",
         "Origin": "https://www.aliexpress.com",
         "Referer": f"https://www.aliexpress.com/w/wholesale-{search_keyword}.html?spm=a2g0o.home.history.1.9d5f76dbxo1lT7",
@@ -55,10 +56,16 @@ async def fetch_aliexpress_product_recommendations(
         # Check for expired cookie, in which case the response would be that the api request is unauthorized
         if response.status_code == 401:  # unauthorized
             logger.info("Cookie expired, fetching a new one.")
-            ALIEXPRESS_COOKIE.cookie = asyncio.run(
-                get_aliexpress_cookie_using_playwright()
+            # ALIEXPRESS_COOKIE.cookie = asyncio.run(
+            #     get_aliexpress_cookie_using_playwright()
+            # )
+            AliExpress_Cookie_Object.cookie = (
+                await get_aliexpress_cookie_using_playwright()
             )
-            headers["Cookie"] = ALIEXPRESS_COOKIE.cookie  # Update with new cookie
+
+            headers["Cookie"] = (
+                AliExpress_Cookie_Object.cookie
+            )  # Update with new cookie
 
             # Retry the initial request with a new cookie
             response = requests.request("GET", url, headers=headers, timeout=180)
@@ -107,4 +114,8 @@ async def fetch_aliexpress_product_recommendations(
 
 # examples:
 if __name__ == "__main__":
-    print(asyncio.run(fetch_aliexpress_product_recommendations("white shoes")))
+    print(
+        asyncio.run(
+            fetch_aliexpress_product_recommendations("white shoes", ALIEXPRESS_COOKIE)
+        )
+    )
