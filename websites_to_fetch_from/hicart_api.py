@@ -53,16 +53,20 @@ async def fetch_hicart_product_recommendations(
 
         logger.debug(f"These are the fetched titles: {titles}\n")
         logger.debug(f"These are the fetched product urls: {product_urls}\n")
+        logger.debug(f"This is the number of fetched products: {len(product_names)}")
 
         # getting the product prices.
-        price_boxes = soup.find_all("div", class_="price-box")
-
-        # only the first 10 or less
-        if len(price_boxes) > 10:
-            price_boxes = price_boxes[:10]
+        price_boxes_with_discount = soup.find_all("div", class_="price-box")
+        price_boxes_without_discount = soup.find_all("div", class_="price-box-min")
+        logger.debug(
+            f"This is the number of fetched price boxes with discount: {len(price_boxes_with_discount)}"
+        )
+        logger.debug(
+            f"This is the number of fetched price boxes without discount: {len(price_boxes_without_discount)}"
+        )
 
         # checking if the price is original or if there's a discount, the extraction differs for each case
-        prices = [
+        prices_with_discount = [
             "US "
             + (
                 price.find("p", class_="special-price")
@@ -73,12 +77,27 @@ async def fetch_hicart_product_recommendations(
                 .find("span", class_="price")
                 .get_text(strip=True)  # gets the regular price
             )
-            for price in price_boxes
+            for price in price_boxes_with_discount
         ]
-        logger.debug(f"These are the prices: {prices}")
+
+        prices_without_discount = [
+            "US " + (price.find("p", class_="minimal-price").get_text(strip=True))
+            for price in price_boxes_without_discount
+        ]
+        # concatenating the prices with and without discount together with more emphasis on the ones with discount
+        prices = prices_with_discount + prices_without_discount
+
+        logger.debug(f"These are the prices with discount: {prices_with_discount}")
+        logger.debug(
+            f"These are the prices without discount: {prices_without_discount}"
+        )
         logger.info(
             f"This is the number of fetched products from HiCart: {len(prices)}"
         )
+
+        # only the first 10 or less
+        if len(prices) > 10:
+            prices = prices[:10]
 
         # if no products are returned, rout the code to return the default no products found
         if len(prices) == 0:
