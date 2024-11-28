@@ -56,9 +56,6 @@ async def fetch_aliexpress_product_recommendations(
         # Check for expired cookie, in which case the response would be that the api request is unauthorized
         if response.status_code == 401:  # unauthorized
             logger.info("Cookie expired, fetching a new one.")
-            # ALIEXPRESS_COOKIE.cookie = asyncio.run(
-            #     get_aliexpress_cookie_using_playwright()
-            # )
             AliExpress_Cookie_Object.cookie = (
                 await get_aliexpress_cookie_using_playwright()
             )

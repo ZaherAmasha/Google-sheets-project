@@ -1,7 +1,6 @@
 # No need to import the functions of this file, pytest recognizes the name conftest.py by default and loads it
 # in the test files
 
-# import pytest
 import pytest_asyncio
 import os
 import sys
