@@ -1,7 +1,5 @@
-import requests
 import os
 from bs4 import BeautifulSoup
-import re
 import sys
 import asyncio
 import traceback
@@ -10,8 +8,8 @@ import traceback
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from utils.logger import logger
-from utils.api_utils import ALIEXPRESS_COOKIE
 from models.products import OutputFetchedProducts
+from using_scraper_api import get_request_using_cloudscraper_with_scraperapi
 
 import cloudscraper
 
@@ -33,7 +31,10 @@ async def fetch_hicart_product_recommendations(
     try:
         # no need to define the headers here because cloudscraper defines them automatically. And there's no needed cookie
         # by hicart.com to call this endpoint and fetch product data. I think it mainly relies on cloudflare for protection.
-        response = scraper.get(url)
+        # response = scraper.get(url)
+        response = get_request_using_cloudscraper_with_scraperapi(
+            cloudscraper=scraper, url=url
+        )
         # with open("hicart_response.txt", "w") as output:
         #     output.write(response.text)
 

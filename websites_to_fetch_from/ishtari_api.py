@@ -8,12 +8,27 @@ from models.products import OutputFetchedProducts
 from utils.logger import logger
 from utils.api_utils import ISHTARI_COOKIE
 from utils.using_playwright import get_ishtari_cookie_using_playwright
+from using_scraper_api import (
+    get_request_from_session_with_scraperapi,
+    get_request_using_scraperapi,
+)
 
 import requests
 import time
 import json
 import traceback
 import asyncio
+from dotenv import load_dotenv
+
+load_dotenv()
+
+USE_ROTATING_IPS_WITH_SCRAPERAPI = bool(
+    os.getenv("USE_ROTATING_IPS_WITH_SCRAPERAPI").strip()
+)
+
+logger.debug(
+    f"This is USE_ROTATING_IPS_WITH_SCRAPERAPI: {USE_ROTATING_IPS_WITH_SCRAPERAPI}"
+)
 
 
 async def get_ishtari_cookie_using_playwright_async_wrapper():
@@ -66,7 +81,16 @@ async def _fetch_products(search_keyword, Ishtari_Cookie_Object):
         # using a session maintains cookies across different requests
         session = requests.Session()
         # First request to get redirect info
-        response = session.get(initial_url, headers=headers)
+        if USE_ROTATING_IPS_WITH_SCRAPERAPI:
+            response = get_request_from_session_with_scraperapi(
+                session=session, url=initial_url, headers=headers
+            )
+            logger.debug(
+                f"Used ScraperAPI to get the product data, this is the response: {response.text}"
+            )
+        else:
+            response = session.get(initial_url, headers=headers)
+            logger.debug("Didn't use ScraperAPI to get the product data")
 
         # Check for expired cookie, in which case the response would be that the api request is unauthorized
         if response.status_code == 401:
@@ -76,7 +100,16 @@ async def _fetch_products(search_keyword, Ishtari_Cookie_Object):
             headers["Authorization"] = f"Bearer {Ishtari_Cookie_Object.get_api_token()}"
 
             # Retry the initial request with a new cookie
-            response = session.get(initial_url, headers=headers)
+            if USE_ROTATING_IPS_WITH_SCRAPERAPI:
+                response = get_request_from_session_with_scraperapi(
+                    session=session, url=initial_url, headers=headers
+                )
+                logger.debug(
+                    f"Used ScraperAPI to get the product data, this is the response: {response.text}"
+                )
+            else:
+                response = session.get(initial_url, headers=headers)
+                logger.debug("Didn't use ScraperAPI to get the product data")
 
         response.raise_for_status()
         initial_data = response.json()
@@ -108,9 +141,14 @@ async def _fetch_products(search_keyword, Ishtari_Cookie_Object):
             time.sleep(2)
 
             # Making the second request
-            response = requests.get(product_url, headers=headers)
+            if USE_ROTATING_IPS_WITH_SCRAPERAPI:
+                response = get_request_using_scraperapi(
+                    url=product_url, headers=headers
+                )
+            else:
+                response = requests.get(product_url, headers=headers)
 
-            # response.raise_for_status()
+            response.raise_for_status()
             logger.debug(f"This is the response: {response.text}")
             logger.debug(
                 f"This is the products list: {response.json().get('data', {}).get('products', [])}"
