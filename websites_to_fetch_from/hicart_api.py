@@ -3,6 +3,13 @@ from bs4 import BeautifulSoup
 import sys
 import asyncio
 import traceback
+from dotenv import load_dotenv
+
+load_dotenv()
+
+USE_ROTATING_IPS_WITH_SCRAPERAPI = bool(
+    os.getenv("USE_ROTATING_IPS_WITH_SCRAPERAPI").strip()
+)
 
 # Get the parent directory of the current file and add it to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -31,10 +38,13 @@ async def fetch_hicart_product_recommendations(
     try:
         # no need to define the headers here because cloudscraper defines them automatically. And there's no needed cookie
         # by hicart.com to call this endpoint and fetch product data. I think it mainly relies on cloudflare for protection.
-        # response = scraper.get(url)
-        response = get_request_using_cloudscraper_with_scraperapi(
-            cloudscraper=scraper, url=url
-        )
+        if USE_ROTATING_IPS_WITH_SCRAPERAPI:
+            response = get_request_using_cloudscraper_with_scraperapi(
+                cloudscraper=scraper, url=url
+            )
+        else:
+            response = scraper.get(url)
+
         # with open("hicart_response.txt", "w") as output:
         #     output.write(response.text)
 
