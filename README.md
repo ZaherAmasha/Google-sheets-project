@@ -1,6 +1,6 @@
 # Google Sheets Product Recommendations
 
-A Google Sheets application that fetches product recommendations from e-commerce websites (AliExpress, Ishtari and HiCart) using their internal APIs, and finds relevant YouTube videos. The system uses FastAPI for the backend, Playwright for cookie management, and Google Apps Script for the frontend integration.
+A Google Sheets application that fetches product recommendations from e-commerce websites (AliExpress, Ishtari and HiCart) using their internal APIs, and finds relevant YouTube videos. The system uses FastAPI for the backend, Playwright for cookie management, ScraperAPI for rotating IP addresses and Google Apps Script for the frontend integration.
 
 ## Video Demo
 
@@ -16,6 +16,7 @@ https://github.com/user-attachments/assets/994e5c4d-0a36-4507-b9d4-ae62347ff961
 - Real-time status updates
 - Containerized deployment using Docker
 - Automated data collection and organization in Google Sheets
+- Optional rotating IP addresses with ScraperAPI
 
 ## Technical Architecture
 
@@ -63,6 +64,8 @@ Required environment variables:
 SHARED_SECRET=<your-hex-secret>        # Authentication secret
 GOOGLE_SHEET_ID=<sheet-id>            # ID of your Google Sheet
 LOG_LEVEL=INFO                        # Optional, default: INFO. Use DEBUG for extra verbosity
+SCRAPERAPI_KEY=<SCRAPERAPI_KEY>       # from the dashboard at scraperapi.com
+USE_ROTATING_IPS_WITH_SCRAPERAPI=True # Optional, enable/disable rotating IPs
 ```
 
 Set these in:
@@ -116,7 +119,11 @@ cp .env.example .env
 # Ensure credentials.json is in the project's root
 
 # Start the application using Docker Compose
-docker-compose up
+# For running the main application
+docker-compose up master
+
+# For running tests
+docker-compose up test
 ```
 
 ### 5. Production Deployment (render.com)
@@ -137,6 +144,24 @@ The backend can be deployed to any platform that supports Docker containers. Thi
 - Provide the `credentials.json` file securely
 - Set up the deployment process according to the platform's specifications
 
+## Rotating IP Addresses
+The application now supports optional IP rotation using ScraperAPI:
+
+- Enable/Disable IP rotation by setting USE_ROTATING_IPS_WITH_SCRAPERAPI in the .env file
+- When enabled, requests will use ScraperAPI's rotating IP service
+- Helps prevent IP blocking and improves scraping reliability
+- Requires a valid ScraperAPI account and API key from scraperapi.com
+- Slower than the normal approach, so use it with that in mind
+
+## Testing
+### Product Fetch Requests Tests
+- Dedicated test suite for product fetch requests
+- Run tests using docker-compose up test
+- Focuses on testing the core functionality of product recommendation fetching
+- Verifies:
+   - API endpoint responses
+   - Product fetch request mechanics
+   - Error handling for fetch requests
 
 ## Implementation Details
 
