@@ -54,7 +54,6 @@ async def _fetch_products(search_keyword, Ishtari_Cookie_Object):
         is None
     ):  # Ishtari cookie has not been set yet, this statement is only entered at the first use of this fetch function
         # fetch a new Ishtari cookie
-        # ISHTARI_COOKIE.cookie = await get_ishtari_cookie_using_playwright()
         Ishtari_Cookie_Object.cookie = await get_ishtari_cookie_using_playwright()
     else:
         logger.info("Ishtari cookie is present, no need to fetch a new one")
@@ -83,7 +82,7 @@ async def _fetch_products(search_keyword, Ishtari_Cookie_Object):
         # First request to get redirect info
         if USE_ROTATING_IPS_WITH_SCRAPERAPI:
             response = get_request_from_session_with_scraperapi(
-                session=session, url=initial_url, headers=headers
+                session=session, url=initial_url, country_code="us", headers=headers
             )
             logger.debug(
                 f"Used ScraperAPI to get the product data, this is the response: {response.text}"
@@ -102,7 +101,7 @@ async def _fetch_products(search_keyword, Ishtari_Cookie_Object):
             # Retry the initial request with a new cookie
             if USE_ROTATING_IPS_WITH_SCRAPERAPI:
                 response = get_request_from_session_with_scraperapi(
-                    session=session, url=initial_url, headers=headers
+                    session=session, url=initial_url, country_code="us", headers=headers
                 )
                 logger.debug(
                     f"Used ScraperAPI to get the product data, this is the response: {response.text}"
@@ -143,7 +142,7 @@ async def _fetch_products(search_keyword, Ishtari_Cookie_Object):
             # Making the second request
             if USE_ROTATING_IPS_WITH_SCRAPERAPI:
                 response = get_request_using_scraperapi(
-                    url=product_url, headers=headers
+                    url=product_url, country_code="us", headers=headers
                 )
             else:
                 response = requests.get(product_url, headers=headers)

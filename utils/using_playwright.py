@@ -1,6 +1,13 @@
 import sys
 import os
-import asyncio
+from dotenv import load_dotenv
+
+load_dotenv()
+
+USE_ROTATING_IPS_WITH_SCRAPERAPI = bool(
+    os.getenv("USE_ROTATING_IPS_WITH_SCRAPERAPI").strip()
+)
+SCRAPERAPI_KEY = os.getenv("SCRAPERAPI_KEY")
 
 # Get the parent directory of the current file and add it to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -16,24 +23,38 @@ async def get_aliexpress_cookie_using_playwright():
     logger.info("Fetching the AliExpress Cookie using Playwright")
     async with async_playwright() as p:
         # Launch chrome browser
-        browser = await p.chromium.launch(headless=True)
+        if USE_ROTATING_IPS_WITH_SCRAPERAPI:
+            proxy = {
+                # need to include the country_code to be 'US' here, firstly to get the desired results and secondly
+                # it appears to be the fastest proxy server
+                "server": f"http://scraperapi.country_code=us:{SCRAPERAPI_KEY}@proxy-server.scraperapi.com:8001",
+                "username": "scraperapi",
+                "password": SCRAPERAPI_KEY,
+            }
 
-        # Open a new browser context (isolated session). Even though I'm setting the location to be US
-        # it's not working
-        context = await browser.new_context(
-            geolocation={
-                "latitude": 37.7749,
-                "longitude": -122.4194,
-            },  # San Francisco, USA
-            locale="en-US",  # English locale
-            timezone_id="America/Los_Angeles",  # U.S. Pacific Timezone
-        )
+            browser = await p.chromium.launch(headless=True, proxy=proxy)
 
+            # Open a new browser context (isolated session).
+            context = await browser.new_context(
+                proxy=proxy,
+            )
+        else:
+            browser = await p.chromium.launch(headless=True)
+
+            # Even though I'm setting the location to be US it's not working
+            context = await browser.new_context(
+                geolocation={
+                    "latitude": 37.7749,
+                    "longitude": -122.4194,
+                },  # San Francisco, USA
+                locale="en-US",  # English locale
+                timezone_id="America/Los_Angeles",  # U.S. Pacific Timezone
+            )
         # Open a new page
         page = await context.new_page()
 
         # Navigate to the main URL
-        await page.goto("https://aliexpress.com", timeout=120000)  # in millisecond
+        await page.goto("http://aliexpress.com", timeout=300000)  # in millisecond
 
         cookie_for_requests = await context.cookies("https://aliexpress.com")
 
@@ -71,29 +92,50 @@ async def get_ishtari_cookie_using_playwright():
     logger.info("Fetching the Ishtari Cookie using Playwright")
     async with async_playwright() as p:
         # Launch chrome browser
-        browser = await p.chromium.launch(headless=True)
+        if USE_ROTATING_IPS_WITH_SCRAPERAPI:
+            logger.debug(
+                "Fetching the Ishtari cookie using rotating IPs with ScraperAPI"
+            )
+            proxy = {
+                # need to include the country_code to be 'US' here, firstly to get the desired results and secondly
+                # it appears to be the fastest proxy server
+                "server": f"http://scraperapi.country_code=us:{SCRAPERAPI_KEY}@proxy-server.scraperapi.com:8001",
+                "username": "scraperapi",
+                "password": SCRAPERAPI_KEY,
+            }
+            browser = await p.chromium.launch(headless=True, proxy=proxy)
 
-        # Open a new browser context (isolated session). Even though I'm setting the location to be US
-        # it's not working
-        context = await browser.new_context(
-            geolocation={
-                "latitude": 37.7749,
-                "longitude": -122.4194,
-            },  # San Francisco, USA
-            locale="en-US",  # English locale
-            timezone_id="America/Los_Angeles",  # U.S. Pacific Timezone
-        )
+            # Open a new browser context (isolated session).
+            context = await browser.new_context(proxy=proxy, ignore_https_errors=True)
+        else:
+            logger.debug(
+                "Fetching the Ishtari cookie without using rotating IPs using ScraperAPI"
+            )
+            browser = await p.chromium.launch(headless=True)
+
+            # Open a new browser context (isolated session).
+            # Even though I'm setting the location to be US, it's not working
+            context = await browser.new_context(
+                geolocation={
+                    "latitude": 37.7749,
+                    "longitude": -122.4194,
+                },  # San Francisco, USA
+                locale="en-US",  # English locale
+                timezone_id="America/Los_Angeles",  # U.S. Pacific Timezone
+            )
 
         # Open a new page
         page = await context.new_page()
 
         # Navigate to the main URL
-        await page.goto("https://www.ishtari.com", timeout=120000)  # in millisecond
+        await page.goto("https://www.ishtari.com", timeout=200000)  # in millisecond
+        # tm.sleep(100)
         await page.wait_for_load_state(
-            "networkidle", timeout=120000
+            "networkidle", timeout=400000
         )  # Wait until the page is fully loaded, otherwise we would get no cookies
 
         cookie_for_requests = await context.cookies("https://www.ishtari.com")
+        logger.debug(f"These are the cookies from Ishtari.com: {cookie_for_requests}")
 
         # Close the browser
         await browser.close()
@@ -107,6 +149,7 @@ async def get_ishtari_cookie_using_playwright():
         logger.info(
             f"Getting the Ishtari cookie using Playwright took: {time()-start_time}"
         )
+        logger.debug(f"This is the Ishtari cookie: {cookie}")
         return cookie
 
 

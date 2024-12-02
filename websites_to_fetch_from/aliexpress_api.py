@@ -5,6 +5,13 @@ import re
 import sys
 import asyncio
 import traceback
+from dotenv import load_dotenv
+
+load_dotenv()
+
+USE_ROTATING_IPS_WITH_SCRAPERAPI = bool(
+    os.getenv("USE_ROTATING_IPS_WITH_SCRAPERAPI").strip()
+)
 
 # Get the parent directory of the current file and add it to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -51,12 +58,14 @@ async def fetch_aliexpress_product_recommendations(
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
     }
     try:
-        response = requests.request("GET", url, headers=headers, timeout=180)
-        logger.debug("Sending the request using scraperapi.")
-        # response = get_request_using_scraperapi(
-        #     url, country_code="us", headers=headers, timeout=180
-        # )
-        logger.debug(f"Got the response using scraperapi: {response}")
+        if USE_ROTATING_IPS_WITH_SCRAPERAPI:
+            logger.debug("Sending the request using scraperapi.")
+            response = get_request_using_scraperapi(
+                url, country_code="us", headers=headers, timeout=180
+            )
+            logger.debug(f"Got the response using scraperapi.")
+        else:
+            response = requests.request("GET", url, headers=headers, timeout=180)
 
         # Couldn't manage to make the Aliexpress cookie expire, but I've added the following statement just in case it expires
         # Check for expired cookie, in which case the response would be that the api request is unauthorized
@@ -71,10 +80,12 @@ async def fetch_aliexpress_product_recommendations(
             )  # Update with new cookie
 
             # Retry the initial request with a new cookie
-            # response = get_request_using_scraperapi(
-            #     url, country_code="us", headers=headers, timeout=180
-            # )
-            response = requests.request("GET", url, headers=headers, timeout=180)
+            if USE_ROTATING_IPS_WITH_SCRAPERAPI:
+                response = get_request_using_scraperapi(
+                    url, country_code="us", headers=headers, timeout=180
+                )
+            else:
+                response = requests.request("GET", url, headers=headers, timeout=180)
 
         response.raise_for_status()  # to raise an exception when an exception happens, for debugging purposes. Without it, the response may be invalid and we wouldn't know immeadiately
 

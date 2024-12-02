@@ -19,6 +19,7 @@ def get_request_using_scraperapi(
         "url": (
             "http://httpbin.org/ip" if test_ip else url
         ),  # This url gets the ip address of the client sending to it
+        "keep_headers": True,
     }
     if country_code:
         payload.update({"country_code": country_code})
@@ -29,7 +30,11 @@ def get_request_using_scraperapi(
 
 
 def get_request_from_session_with_scraperapi(
-    session: requests.Session, url: str, test_ip=False, **kwargs
+    session: requests.Session,
+    url: str,
+    test_ip=False,
+    country_code: str = None,
+    **kwargs,
 ) -> requests.Response:
 
     payload = {
@@ -37,14 +42,22 @@ def get_request_from_session_with_scraperapi(
         "url": (
             "http://httpbin.org/ip" if test_ip else url
         ),  # This url gets the ip address of the client sending to it
+        "keep_headers": True,
     }
+    if country_code:
+        payload.update({"country_code": country_code})
+
     response = session.get("https://api.scraperapi.com", params=payload, **kwargs)
 
     return response
 
 
 def get_request_using_cloudscraper_with_scraperapi(
-    cloudscraper: cloudscraper.CloudScraper, url: str, test_ip=False, **kwargs
+    cloudscraper: cloudscraper.CloudScraper,
+    url: str,
+    test_ip=False,
+    country_code: str = None,
+    **kwargs,
 ) -> requests.Response:
 
     payload = {
@@ -52,7 +65,10 @@ def get_request_using_cloudscraper_with_scraperapi(
         "url": (
             "http://httpbin.org/ip" if test_ip else url
         ),  # This url gets the ip address of the client sending to it
+        "keep_headers": True,
     }
+    if country_code:
+        payload.update({"country_code": country_code})
     response = cloudscraper.get("https://api.scraperapi.com", params=payload, **kwargs)
 
     return response
@@ -60,7 +76,7 @@ def get_request_using_cloudscraper_with_scraperapi(
 
 if __name__ == "__main__":
     # scraper = cloudscraper.create_scraper()
+    # response = get_request_using_cloudscraper_with_scraperapi(scraper, "", test_ip=True)
     session = requests.Session()
     response = get_request_from_session_with_scraperapi(session, "", test_ip=True)
-    # response = get_request_using_cloudscraper_with_scraperapi(scraper, "", test_ip=True)
     print(response.text)
